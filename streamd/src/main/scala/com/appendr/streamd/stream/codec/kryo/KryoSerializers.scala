@@ -11,7 +11,7 @@
  *  (_||_)|_)(/_| |(_||
  *     |  |
  */
-package com.appendr.streamd.stream.codec.KryoSerializers
+package com.appendr.streamd.stream.codec.kryo
 
 import com.esotericsoftware.kryo.{Serializer, Kryo}
 import com.esotericsoftware.kryo.io.{Input, Output}

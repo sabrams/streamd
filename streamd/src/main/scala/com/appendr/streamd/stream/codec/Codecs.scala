@@ -14,7 +14,7 @@
 package com.appendr.streamd.stream.codec
 
 import com.appendr.streamd.stream._
-import codec.KryoSerializers.ScalaMapSerializer
+import kryo.ScalaMapSerializer
 import util.Marshal
 import com.appendr.streamd.util.Reflector
 import com.esotericsoftware.kryo.Kryo
