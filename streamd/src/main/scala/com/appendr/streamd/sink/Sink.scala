@@ -18,6 +18,5 @@ package com.appendr.streamd.sink
 trait Sink {
     def open()
     def close()
-    def out(msg: Object)
+    def out[T](msg: T)
 }
-

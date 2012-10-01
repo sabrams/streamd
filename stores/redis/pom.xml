@@ -2,8 +2,8 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.appendr.store</groupId>
-  <artifactId>RedisStore</artifactId>
+  <groupId>com.appendr</groupId>
+  <artifactId>redis-store</artifactId>
   <version>0.1</version>
   <packaging>jar</packaging>
 
