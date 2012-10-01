@@ -15,12 +15,13 @@ package com.appendr.streamd.stream
 
 import scalaz._
 import Scalaz._
+import scala.collection
+import collection.JavaConversions
 import jsr166y.ForkJoinPool
 import com.appendr.streamd.cluster.{Router, Node}
 import com.appendr.streamd.store.Store
 import com.appendr.streamd.sink.Sink
-import scala.collection
-import collection.JavaConversions
+import com.appendr.streamd.conf.ConfigurableResource
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -82,7 +83,7 @@ case class StreamTuple(override val _1: String, override val _2: String, overrid
 
 case class StreamEvent(src: Source, stream: Option[StreamTuple])
 
-trait StreamProc {
+trait StreamProc extends ConfigurableResource {
     def proc(t: StreamTuple, s: Option[Store], o: Option[Sink]): Option[StreamTuple]
     def coll(t: StreamTuple)
 }

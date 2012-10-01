@@ -87,6 +87,10 @@ class ColorScore extends StreamProc {
         val count = t._3.get("count").get
         System.out.println("++++++ Reducing " + color + " has been seen " + count + " times.")
     }
+
+    def close() {}
+
+    def open(config: Option[Configuration]) {}
 }
 
 class HashStore extends Store {
@@ -145,4 +149,6 @@ class HashStore extends Store {
     }
 
     def close() {}
+
+    def open(config: Option[Configuration]) {}
 }

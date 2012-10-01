@@ -52,7 +52,7 @@ sealed class ServerSpec(config: Configuration) extends ServerConfigSpec {
     name = config.apply("streamd.server.name")
     port = config.apply("streamd.server.port").toInt
     codec = CodecFactory[StreamEvent](config.apply("streamd.codec"))
-    proc = Reflector[StreamProc](config.apply("streamd.processor"))
+    proc = ProcSpec(config)
     store = StoreSpec(config)
     sink = SinkSpec(config)
 }
@@ -61,7 +61,7 @@ sealed class ClientSpec(config: Configuration) extends ClientConfigSpec {
     name = config.apply("streamd.client.name")
     port = config.apply("streamd.client.port").toInt
     codec = CodecFactory[StreamEvent](config.apply("streamd.codec"))
-    proc = Reflector[StreamProc](config.apply("streamd.processor"))
+    proc = ProcSpec(config)
     store = StoreSpec(config)
     sink = SinkSpec(config)
 }
@@ -84,16 +84,36 @@ sealed class ClientConfig(override val spec: ClientConfigSpec) extends BaseConfi
 
 private object StoreSpec {
     def apply(conf: Configuration) : Option[Store] = {
-        val storeClass = conf.getString("streamd.store")
-        if (storeClass.isDefined) Some(Reflector[Store](storeClass.get))
+        val storeClass = conf.getString("streamd.store.class")
+        if (storeClass.isDefined) {
+            val s = Some(Reflector[Store](storeClass.get))
+            s.get.open(conf.getSection("streamd.store"))
+            s
+        }
         else None
     }
 }
 
 private object SinkSpec {
     def apply(conf: Configuration) : Option[Sink] = {
-        val sinkClass = conf.getString("streamd.sink")
-        if (sinkClass.isDefined) Some(Reflector[Sink](sinkClass.get))
+        val sinkClass = conf.getString("streamd.sink.class")
+        if (sinkClass.isDefined) {
+            val s = Some(Reflector[Sink](sinkClass.get))
+            s.get.open(conf.getSection("streamd.sink"))
+            s
+        }
         else None
+    }
+}
+
+private object ProcSpec {
+    def apply(conf: Configuration) : StreamProc = {
+        val procClass = conf.getString("streamd.processor.class")
+        if (procClass.isDefined) {
+            val p = Reflector[StreamProc](conf.apply("streamd.processor.class"))
+            p.open(conf.getSection("streamd.processor"))
+            p
+        }
+        else throw new IllegalArgumentException
     }
 }

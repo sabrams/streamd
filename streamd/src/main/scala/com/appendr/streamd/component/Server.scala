@@ -44,7 +44,7 @@ sealed class Server(private val config: BaseConfig[_], private val cs: ClusterSp
 
     def start() {
         // TODO: processor needs to be dynamically loaded and unloaded (version 0.1 it is static)
-        // TODO: demux streams to multiple processors by streamId
+        // TODO: demux streams to multiple processors by streamId (version 0.1 supports single stream)
         dispatch.start()
         server.start(config.spec.port.value, DispatchingNetworkHandler(dispatch, config.codec.value))
         cluster.start()

@@ -76,8 +76,8 @@ class TelnetNetworkHandler extends LoggingNetworkHandler {
     }
 
     def handleMessage(msg: Object): Option[NetworkMessage] = {
-        val m = msg.toString
-        val t = map.get(m)
+        val m = msg.toString.split(" ")
+        val t = map.get(m.head)
         val message = t match {
             case None => Some(new NetworkMessage("bye!\n", ControlMessage.CLOSE))
             case _ => Some(new NetworkMessage(t.get.command(m), ControlMessage.REPLY))
@@ -97,7 +97,7 @@ trait TelnetPlugin {
     val module: String
     def shutdown()
     def commands: List[String]
-    def command(cmd: String): String
+    def command(cmd: Array[String]): String
 }
 
 class DefaultTelnetPlugin(private val cmdMap: mutable.HashMap[String, TelnetPlugin])
@@ -107,9 +107,9 @@ class DefaultTelnetPlugin(private val cmdMap: mutable.HashMap[String, TelnetPlug
     cmdMap.put("help", this)
 
     def commands = List("help")
-    def command(cmd: String) = {
+    def command(cmd: Array[String]) = {
         import com.appendr.streamd.util.RichCollection._
-        cmd match {
+        cmd.head match {
             case "help" => {
                 "To execute a command, module:command <args> \n\n -- Modules -- \n" +
                 format(cmdMap.values.distinctBy(_.module).map(t => t.module + ":\n" + format(t.commands, true)))

@@ -64,8 +64,8 @@ class MyPlugin extends TelnetPlugin {
 
     def commands = List("test")
 
-    def command(cmd: String) = {
-        "Hello " + cmd
+    def command(cmd: Array[String]) = {
+        "Hello " + cmd.flatten
     }
 }
 
@@ -77,4 +77,8 @@ class TestProc extends StreamProc {
         System.out.println("------> StreamProc proccess tuple: " + t)
         Some(t)
     }
+
+    def close() {}
+
+    def open(config: Option[Configuration]) {}
 }

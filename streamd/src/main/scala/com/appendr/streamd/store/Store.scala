@@ -13,11 +13,11 @@
  */
 package com.appendr.streamd.store
 
-import java.io.Closeable
+import com.appendr.streamd.conf.ConfigurableResource
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-trait Store extends Closeable {
+trait Store extends ConfigurableResource {
     def get(key: String): Object
     def get(keys: String*): List[_]
     def set(key: String, value: Object)
