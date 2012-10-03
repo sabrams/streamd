@@ -21,6 +21,7 @@ import com.appendr.streamd.conf.ConfigurableResource
 import com.espertech.esper.client.{EPStatement, Configuration, EPServiceProviderManager, EPServiceProvider}
 import com.espertech.esper.client.deploy.{DeploymentState, DeploymentOptions, EPDeploymentAdmin, DeploymentInformation}
 import com.appendr.streamd.util.Reflector
+import collection.mutable
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -72,8 +73,7 @@ class Engine extends ConfigurableResource {
     }
 
     def getModules: List[ModuleInfo] = {
-        val info = esper.getEPAdministrator.getDeploymentAdmin.getDeploymentInformation.toList
-        info.map(i => getInfo(i))
+        deploymentInfo.map(i => getInfo(i))
     }
 
     def load(url: URL) = {
@@ -105,7 +105,7 @@ class Engine extends ConfigurableResource {
 
             // add subscribers
             import collection.JavaConversions.asScalaBuffer
-            val si = asScalaBuffer[EPStatement](res.getStatements)
+            val si: mutable.Buffer[EPStatement] = res.getStatements
             for (s <- si) {
                 s.getAnnotations.foreach {
                     a: Annotation => {
@@ -134,5 +134,9 @@ class Engine extends ConfigurableResource {
 
     private def admin: EPDeploymentAdmin = {
         esper.getEPAdministrator.getDeploymentAdmin
+    }
+
+    private def deploymentInfo: List[DeploymentInformation] = {
+        esper.getEPAdministrator.getDeploymentAdmin.getDeploymentInformation.toList
     }
 }
