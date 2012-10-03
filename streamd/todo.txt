@@ -1,3 +1,4 @@
+TODO: add environment variables to configuration ie. %STREAMD_HOME%
 TODO: dynamic class loading and distribution / deployment of bytecode
 TODO: control port / jmx
 TODO: language bindings

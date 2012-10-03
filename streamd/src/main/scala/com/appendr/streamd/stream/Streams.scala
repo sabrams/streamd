@@ -154,7 +154,7 @@ class StreamRoutingDispatcher(
                         System.err.println(String.format("uncaughtException in thread '%s'", t))
                     }
                 }, true
-                )
+            )
         }
 
         def stop() {

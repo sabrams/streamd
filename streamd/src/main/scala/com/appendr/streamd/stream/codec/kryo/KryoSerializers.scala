@@ -25,7 +25,7 @@ class ScalaMapSerializer[K](kc: Class[K]) extends Serializer[Map[K, Any]] {
             case 0 => o.writeInt(m.size, true)
             case _ => {
                 o.writeInt(m.size, true)
-                m.map(writeEntry(kryo, o, _))
+                m.foreach(writeEntry(kryo, o, _))
             }
         }
     }
