@@ -40,14 +40,14 @@ class Engine extends ConfigurableResource {
 
     import com.appendr.streamd.conf.Configuration
     def open(config: Option[Configuration]) {
-        val urlstr = config.get.getString("streamd.cep.config")
+        val urlstr = config.get.getString("streamd.plugin.processor.cep.config")
         if (urlstr != null && urlstr.isDefined) cfg.configure(new URL(urlstr.get))
         else cfg.configure()
 
         esper.initialize()
 
-        val modStr = config.get.getString("streamd.cep.module")
-        if (modStr != null && modStr.isDefined) activate(load(new URL(modStr.get)))
+        val modules = config.get.getList("streamd.plugin.processor.cep.modules")
+        if (modules != null) modules.foreach(m => activate(load(new URL(m))))
     }
 
     def close() {

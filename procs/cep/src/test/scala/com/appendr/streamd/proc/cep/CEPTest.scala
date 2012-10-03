@@ -1,6 +1,5 @@
 package com.appendr.streamd.proc.cep
 
-import esper.DynaModule
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -22,11 +21,6 @@ class CEPTest extends FunSuite with BeforeAndAfter {
 
     before {
         proc.open(Some(conf.Configuration.fromResource("test.conf")))
-        /*
-        val m: DynaModule = new DynaModule(
-            "select distinct color, count(color), avg(score) from colors.win:time_length_batch(10, 100);",
-            classOf[TestSubscriber], Some("test-module"), Some("create map schema colors as (user String, color String, score float);"))
-        proc.engine.activate(proc.engine.load(m.epl))*/
     }
 
     after {
@@ -36,8 +30,8 @@ class CEPTest extends FunSuite with BeforeAndAfter {
     test("engine evaluates events") {
         val dataStream = getClass.getClassLoader.getResourceAsStream("data.csv")
         val iter = Source.fromInputStream(dataStream).getLines()
-
         for (s <- iter) proc.proc(ixf.transform(s), None, None)
+        Thread.sleep(5000)
     }
 }
 

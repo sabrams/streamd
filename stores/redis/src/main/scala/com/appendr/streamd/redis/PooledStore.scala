@@ -15,6 +15,7 @@ package com.appendr.streamd.redis
 
 import com.appendr.streamd.store.Store
 import com.redis.{RedisClient, RedisClientPool}
+import com.appendr.streamd.conf.Configuration
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -84,6 +85,10 @@ class PooledStore(host: String, port: Int) extends Store {
 
     def inc(key: (String, String), i: Int) {
         client(r => r.hincrby(key._1, key._2, i))
+    }
+
+    def open(config: Option[Configuration]) {
+        // TODO: Refactor to use trait properly
     }
 
     def close() {

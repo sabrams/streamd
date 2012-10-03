@@ -74,7 +74,8 @@ class ColorScore extends StreamProc {
             store.set(color, new AtomicLong(1))
             count = 1
         }
-    //    System.out.println("------ Mapping " + color + " has been seen " + count + " times.")
+
+        System.out.println("------ Mapping " + color + " has been seen " + count + " times.")
 
         if (count % 5 == 0)
             Some.apply(new StreamTuple(t._1, t._2, Map[String, String](t._2 -> color, "count" -> count.toString)))

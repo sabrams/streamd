@@ -1,3 +1,4 @@
+TODO: Fix Kryo Codec bug in ScalaMapSerializer
 TODO: add environment variables to configuration ie. %STREAMD_HOME%
 TODO: dynamic class loading and distribution / deployment of bytecode
 TODO: control port / jmx
@@ -8,4 +9,4 @@ TODO: Store Implementations (Redis, Couch, Mongo)
 TODO: Sink Implementations  (0MQ, RabbitMQ, JMS, Scribe, Flume)
 TODO: Send Control Messages - Stream Complete Message
 TODO: Add Multicast to all nodes
-TODO: Stream DeMuxing to allow multiple stream processors to run on a node
+TODO: Stream DeMuxing to allow multiple stream processors to run on a node (migrate to plugin architecture)

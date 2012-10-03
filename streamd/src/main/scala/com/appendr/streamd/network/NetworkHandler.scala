@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory
 import com.appendr.streamd.stream.{StreamEvent, StreamRoutingDispatcher}
 import com.appendr.streamd.stream.codec.CodecFactory
 import collection.mutable
+import com.appendr.streamd.plugin.{DefaultTelnetPlugin, TelnetPlugin}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -93,44 +94,6 @@ class TelnetNetworkHandler extends LoggingNetworkHandler {
     }
 }
 
-trait TelnetPlugin {
-    val module: String
-    def shutdown()
-    def commands: List[String]
-    def command(cmd: Array[String]): String
-}
-
-class DefaultTelnetPlugin(private val cmdMap: mutable.HashMap[String, TelnetPlugin])
-    extends TelnetPlugin {
-    val module = "streamd"
-
-    cmdMap.put("help", this)
-
-    def commands = List("help")
-    def command(cmd: Array[String]) = {
-        import com.appendr.streamd.util.RichCollection._
-        cmd.head match {
-            case "help" => {
-                "To execute a command, module:command <args> \n\n -- Modules -- \n" +
-                format(cmdMap.values.distinctBy(_.module).map(t => t.module + ":\n" + format(t.commands, true)))
-            }
-        }
-    }
-
-    def shutdown() {
-    }
-
-    private def format(list: Iterable[String], tab: Boolean = false): String = {
-        val b = new StringBuilder
-        for (s <- list) {
-            if (tab) b.append("    ")
-            b.append(s)
-            b.append("\n")
-        }
-
-        b.toString()
-    }
-}
 
 
 

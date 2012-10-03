@@ -13,7 +13,7 @@
  */
 package com.appendr.streamd.proc.cep.telnet
 
-import com.appendr.streamd.network.TelnetPlugin
+import com.appendr.streamd.plugin.TelnetPlugin
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

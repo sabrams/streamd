@@ -33,18 +33,25 @@ object Server {
         val clusterSpec = new ClusterSpec(config)
         clusterSpec.validate()
 
-        new Server(serverSpec.apply(), clusterSpec)
+        val pluginSpec = new PluginSpec(config)
+        pluginSpec.validate()
+
+        new Server(serverSpec.apply(), pluginSpec, clusterSpec)
     }
 }
 
-sealed class Server(private val config: BaseConfig[_], private val cs: ClusterSpec) {
+sealed class Server(
+    private val config: BaseConfig[_],
+    private val ps: PluginSpec,
+    private val cs: ClusterSpec) {
     private val cluster = Cluster(cs, config.node, config.codec.value)
     private val server = NettyServer()
-    private val dispatch = StreamRoutingDispatcher(config.proc.value, cluster, config.store, config.sink)
+    private val plugin = ps.apply()
+    private val dispatch = StreamRoutingDispatcher(plugin.proc, cluster, plugin.store, plugin.sink)
 
     def start() {
-        // TODO: processor needs to be dynamically loaded and unloaded (version 0.1 it is static)
-        // TODO: demux streams to multiple processors by streamId (version 0.1 supports single stream)
+        // TODO: plugins need to be dynamically loaded and unloaded (version 0.1 it is static)
+        // TODO: demux streams to multiple plugins by streamId (version 0.1 supports single stream)
         dispatch.start()
         server.start(config.spec.port.value, DispatchingNetworkHandler(dispatch, config.codec.value))
         cluster.start()
@@ -54,6 +61,7 @@ sealed class Server(private val config: BaseConfig[_], private val cs: ClusterSp
         dispatch.stop()
         cluster.stop()
         server.stop()
+        plugin.close()
     }
 
     def getNode: Node = config.node.get
@@ -69,7 +77,10 @@ object Client {
         val clusterSpec = new ClusterSpec(config)
         clusterSpec.validate()
 
-        new Server(clientSpec.apply(), clusterSpec)
+        val pluginSpec = new PluginSpec(config)
+        pluginSpec.validate()
+
+        new Server(clientSpec.apply(), pluginSpec, clusterSpec)
     }
 
     implicit def server2Client(from: Server) = new Client(from)

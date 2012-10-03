@@ -15,11 +15,12 @@ import org.scalatest.{FunSuite, BeforeAndAfter}
 import org.scalatest.junit.JUnitRunner
 import org.slf4j.LoggerFactory
 import com.appendr.streamd.network.netty.NettyTextServer
-import com.appendr.streamd.network.{TelnetPlugin, TelnetNetworkHandler}
+import com.appendr.streamd.network.TelnetNetworkHandler
 import com.appendr.streamd.sink.Sink
 import com.appendr.streamd.component.{ServerComponent, Server}
 import com.appendr.streamd.stream.{StreamTuple, StreamProc}
 import com.appendr.streamd.store.Store
+import com.appendr.streamd.plugin.TelnetPlugin
 
 @RunWith(classOf[JUnitRunner])
 class ServerTest extends FunSuite with BeforeAndAfter {
