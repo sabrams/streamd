@@ -47,7 +47,7 @@ sealed class Server(
     private val cluster = Cluster(cs, config.node, config.codec.value)
     private val server = NettyServer()
     private val plugin = ps.apply()
-    private val dispatch = StreamRoutingDispatcher(plugin.proc, cluster, plugin.store, plugin.sink)
+    private val dispatch = StreamRoutingDispatcher(plugin.proc, cluster)
 
     def start() {
         // TODO: plugins need to be dynamically loaded and unloaded (version 0.1 it is static)

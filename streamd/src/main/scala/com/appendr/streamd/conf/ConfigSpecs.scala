@@ -21,7 +21,7 @@ import com.appendr.streamd.util.Reflector
 import com.appendr.streamd.stream.codec.CodecFactory
 import com.appendr.streamd.store.Store
 import com.appendr.streamd.sink.Sink
-import com.appendr.streamd.plugin.StreamPlugin
+import com.appendr.streamd.plugin.{PluginContextAware, PluginContext}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -71,7 +71,7 @@ sealed class ClientConfig(override val spec: ClientConfigSpec) extends BaseConfi
     override val node = Some(Node(spec.name.value, address.getHostName, address.getPort, routable = false))
 }
 
-abstract sealed class PluginConfigSpec extends ConfigSpec[StreamPlugin] {
+abstract sealed class PluginConfigSpec extends ConfigSpec[PluginContext] {
     var proc = required[StreamProc]
     var sink = optional[Sink]
     var store = optional[Store]
@@ -88,13 +88,18 @@ sealed class PluginSpec(config: Configuration) extends PluginConfigSpec {
 
     val storeClass = config.getString("streamd.plugin.store.class")
     store = {
-        if (sinkClass.isDefined) Some(Reflector[Store](storeClass))
+        if (storeClass.isDefined) Some(Reflector[Store](storeClass))
         else None
     }
 
     def apply() = {
-        val plugin = StreamPlugin(proc, sink, store)
+        val plugin = PluginContext(proc, sink, store)
         plugin.open(config)
+
+        if (proc.isInstanceOf[PluginContextAware]) {
+            proc.asInstanceOf[PluginContextAware].context = (sink, store)
+        }
+
         plugin
     }
 }

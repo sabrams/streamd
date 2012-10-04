@@ -74,8 +74,8 @@ class TestProc extends StreamProc {
     def coll(tuple: StreamTuple) {
         System.out.println("------> StreamProc collect tuple: " + tuple)
     }
-    def proc(t: StreamTuple, s: Option[Store], o: Option[Sink]) = {
-        System.out.println("------> StreamProc proccess tuple: " + t)
+    def proc(t: StreamTuple) = {
+        System.out.println("======> StreamProc proccess tuple: " + t)
         Some(t)
     }
 

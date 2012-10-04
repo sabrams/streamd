@@ -1,11 +1,16 @@
 package com.appendr.streamd.examples.colorscore;
 
+import com.appendr.streamd.conf.Configuration;
+import com.appendr.streamd.connector.ByteArrayToStringInput;
+import com.appendr.streamd.connector.FileConnector;
+import com.appendr.streamd.connector.InputTransformer;
+import java.net.URL;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 /**
- * Unit test for simple App.
+ * Using this as a driver, it is not a unit test
  */
 public class AppTest 
     extends TestCase
@@ -33,6 +38,11 @@ public class AppTest
      */
     public void testApp()
     {
-        assertTrue( true );
+        URL datafile = Thread.currentThread().getContextClassLoader().getResource("data.csv");
+        Configuration cfg = Configuration.fromResource("app.conf");
+        InputTransformer<String> ixf = new StreamTransformer();
+        FileConnector connector = new FileConnector(cfg, ByteArrayToStringInput.apply(ixf));
+        connector.start(new String[]{datafile.toString()});
+        connector.connectorStop();
     }
 }

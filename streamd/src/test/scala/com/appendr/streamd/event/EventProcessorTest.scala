@@ -12,14 +12,14 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import com.appendr.streamd.conf.Configuration
-import com.appendr.streamd.stream.{TwoWay, OneWay, StreamProc, StreamTuple}
+import com.appendr.streamd.stream.{TwoWay, StreamProc, StreamTuple}
 import com.appendr.streamd.connector.InputTransformer
 import com.appendr.streamd.component.{Client, Server}
 import com.appendr.streamd.store.Store
-import com.appendr.streamd.sink.Sink
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
 import io.Source
+import com.appendr.streamd.plugin.PluginContextAware
 
 
 @RunWith(classOf[JUnitRunner])
@@ -61,9 +61,9 @@ class EventProcessorTest extends FunSuite with BeforeAndAfter {
     }
 }
 
-class ColorScore extends StreamProc {
-    def proc(t: StreamTuple, s: Option[Store], o: Option[Sink]) = {
-        val store = s.get
+class ColorScore extends StreamProc with PluginContextAware {
+    def proc(t: StreamTuple) = {
+        val store = context._2.get
         val color: String = t._3.get("color").get.asInstanceOf[String]
         var count: Long = 0
 

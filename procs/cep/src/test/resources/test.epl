@@ -1,7 +1,0 @@
-module test.module;
-import com.appendr.streamd.proc.cep.esper.Subscriber;
-create map schema colors as (user String, color String, score float);
-
-@Name('test.module')
-@Subscriber('com.appendr.streamd.proc.cep.TestSubscriber')
-select distinct color, count(color), avg(score) from colors.win:time_accum(1000) output snapshot every 5 seconds;

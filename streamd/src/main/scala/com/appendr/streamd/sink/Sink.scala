@@ -14,7 +14,9 @@
 package com.appendr.streamd.sink
 
 import com.appendr.streamd.conf.{Configuration, ConfigurableResource}
-import java.io.FileOutputStream
+import java.io.{File, FileOutputStream}
+import java.net.URI
+import org.slf4j.LoggerFactory
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -23,12 +25,17 @@ trait Sink extends ConfigurableResource {
 }
 
 class FileSink extends Sink {
+    private val log = LoggerFactory.getLogger(getClass)
     private var stream: Option[FileOutputStream] = None
 
+    // TODO: externalize config strings with a spec
     def open(config: Option[Configuration]) {
         if (config.isDefined) {
-            val path: Option[String] = config.get.getString("streamd.sink.path")
-            if (path.isDefined) stream = Some(new FileOutputStream(path.get))
+            val path: Option[String] = config.get.getString("path")
+            val f = new File(new URI(path.get))
+            if (!f.exists()) f.createNewFile()
+            f.setWritable(true)
+            if (path.isDefined) stream = Some(new FileOutputStream(f))
         }
     }
 
@@ -41,5 +48,6 @@ class FileSink extends Sink {
 
     def out[T](msg: T) {
         if (stream.isDefined) stream.get.write(msg.toString.getBytes)
+        else log.warn("Stream is not open for writing.")
     }
 }

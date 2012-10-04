@@ -19,8 +19,6 @@ import scala.collection
 import collection.JavaConversions
 import jsr166y.ForkJoinPool
 import com.appendr.streamd.cluster.{Router, Node}
-import com.appendr.streamd.store.Store
-import com.appendr.streamd.sink.Sink
 import com.appendr.streamd.conf.ConfigurableResource
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -84,7 +82,7 @@ case class StreamTuple(override val _1: String, override val _2: String, overrid
 case class StreamEvent(src: Source, stream: Option[StreamTuple])
 
 trait StreamProc extends ConfigurableResource {
-    def proc(t: StreamTuple, s: Option[Store], o: Option[Sink]): Option[StreamTuple]
+    def proc(t: StreamTuple): Option[StreamTuple]
     def coll(t: StreamTuple)
 }
 
@@ -92,16 +90,12 @@ trait StreamProc extends ConfigurableResource {
  * StreamRoutingDispatcher delegates to configurable threaded stream dispatcher.
  */
 object StreamRoutingDispatcher {
-    def apply(p: StreamProc, r: Router, s: Option[Store], o: Option[Sink]) = {
-        new StreamRoutingDispatcher(p, r, s, o)
+    def apply(p: StreamProc, r: Router) = {
+        new StreamRoutingDispatcher(p, r)
     }
 }
 
-class StreamRoutingDispatcher(
-    private val p: StreamProc,
-    private val r: Router,
-    private val s: Option[Store],
-    private val o: Option[Sink]) {
+class StreamRoutingDispatcher(private val p: StreamProc, private val r: Router) {
     private val d: StreamDispatcher = new StreamDispatcher
 
     def start() {
@@ -120,11 +114,11 @@ class StreamRoutingDispatcher(
     private def fn(e: StreamEvent) {
         import Lenses._
         e match {
-            case StreamEvent(Source(_, _, OneWay), Some(x)) => p.proc(x, s, o)
+            case StreamEvent(Source(_, _, OneWay), Some(x)) => p.proc(x)
             case StreamEvent(Source(_, _, Terminate), Some(x)) => p.coll(x)
             case StreamEvent(Source(_, _, Route), x) => r.route(e.src.node, stl.set(e, (sl.set(e.src, Terminate), x)))
             case StreamEvent(Source(_, _, TwoWay), Some(x)) => {
-                p.proc(x, s, o) match {
+                p.proc(x) match {
                     case Some(res) => dispatch(stl.set(e, (sl.set(e.src, Route), Some(res))))
                     case None =>
                 }

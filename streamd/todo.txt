@@ -1,5 +1,11 @@
+BUGS
+TODO: Include all modules in onejar, get rid of separate projects
 TODO: Fix Kryo Codec bug in ScalaMapSerializer
+
+
+FEATURES:
 TODO: add environment variables to configuration ie. %STREAMD_HOME%
+TODO: add File and Resources to configuration by parsing protocol classpath:// file:// as well as relative paths etc...
 TODO: dynamic class loading and distribution / deployment of bytecode
 TODO: control port / jmx
 TODO: language bindings
