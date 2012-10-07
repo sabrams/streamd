@@ -16,6 +16,8 @@ package com.appendr.streamd.network.netty
 import org.slf4j.LoggerFactory
 import org.jboss.netty.channel._
 import com.appendr.streamd.network.{NetworkMessage, ControlMessage, NetworkHandler}
+import org.jboss.netty.handler.codec.http.websocketx.{CloseWebSocketFrame, WebSocketClientHandshaker}
+import org.jboss.netty.handler.codec.http.HttpResponse
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -44,6 +46,30 @@ class NettyHandler(handler: NetworkHandler) extends SimpleChannelUpstreamHandler
             val future = e.getChannel.write(msg.msg)
             if (msg.ctrlMsg.equals(ControlMessage.CLOSE))
                 future.addListener(ChannelFutureListener.CLOSE)
+        }
+    }
+
+    override def exceptionCaught(ctx: ChannelHandlerContext, e: ExceptionEvent) {
+        log.warn("Unexpected exception from downstream.", e.getCause)
+        e.getChannel.close
+    }
+}
+
+class NettyWebSocketHandler(private val h: WebSocketClientHandshaker)
+    extends SimpleChannelUpstreamHandler {
+    private val log = LoggerFactory.getLogger(getClass)
+
+    override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
+        val ch = ctx.getChannel
+        val m = e.getMessage
+
+        if (!h.isHandshakeComplete) {
+            h.finishHandshake(ch, m.asInstanceOf[HttpResponse])
+            if (log.isInfoEnabled) log.info("WebSocket Client connected!")
+        }
+        else {
+            if (m.isInstanceOf[HttpResponse]) throw new RuntimeException("Unexpected response.")
+            if (m.isInstanceOf[CloseWebSocketFrame]) ch.close()
         }
     }
 

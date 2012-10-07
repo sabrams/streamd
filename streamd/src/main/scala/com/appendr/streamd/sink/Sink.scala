@@ -17,11 +17,12 @@ import com.appendr.streamd.conf.{Configuration, ConfigurableResource}
 import java.io.{File, FileOutputStream}
 import java.net.URI
 import org.slf4j.LoggerFactory
+import com.appendr.streamd.network.netty.NettyWebSocketClient
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 trait Sink extends ConfigurableResource {
-    def out[T](msg: T)
+    def out(msg: Any)
 }
 
 class FileSink extends Sink {
@@ -46,8 +47,33 @@ class FileSink extends Sink {
         }
     }
 
-    def out[T](msg: T) {
+    def out(msg: Any) {
         if (stream.isDefined) stream.get.write(msg.toString.getBytes)
         else log.warn("Stream is not open for writing.")
+    }
+}
+
+class StdOutSink extends Sink {
+    def close() {}
+    def open(config: Option[Configuration]) {}
+    def out(msg: Any) {
+        System.out.println(msg)
+    }
+}
+
+class WebSocketSink extends Sink {
+    private var ws: Option[NettyWebSocketClient] = None
+    def close() {
+        if (ws.isDefined) ws.get.disconnect()
+    }
+
+    def open(config: Option[Configuration]) {
+        val uri = URI.create(config.get.getString("uri").get)
+        ws = Some(new NettyWebSocketClient(uri))
+        ws.get.connect()
+    }
+
+    def out(msg: Any) {
+        if (ws.isDefined) ws.get.send(msg.toString)
     }
 }

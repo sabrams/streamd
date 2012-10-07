@@ -30,7 +30,7 @@ object Driver {
             "\n" + "----------------------------------------"
 
     def main(args: Array[String]) {
-        val driver = new Driver(args.head)
+        val driver = new DriverShell(args.head)
 
         Runtime.getRuntime.addShutdownHook(new Thread() {
             override def run() {
@@ -41,48 +41,29 @@ object Driver {
         })
 
         System.out.println("[Boot] Starting streamd client driver...")
-        driver.start(args.tail)
+        driver.start()
     }
 }
 
-sealed class Driver(conf: String) {
+private sealed class DriverShell(conf: String) {
     val config = Configuration.fromFile(conf)
-    val transformer = Reflector.newInstance[InputTransformer[_]](config.apply("streamd.driver.transformer"))(Thread.currentThread().getContextClassLoader)
-    val driver = Reflector.newInstance[ClientDriver[_]](config.apply("streamd.driver.client"), config, transformer)(Thread.currentThread().getContextClassLoader)
+    val driver = Reflector.newInstance[Driver](
+        config.apply("streamd.driver.class"))(Thread.currentThread().getContextClassLoader)
 
     System.out.println(Driver.banner)
 
-    def start(args: Array[String]) {
-        driver.start(args)
+    def start() {
+        driver.start(config.getSection("streamd.driver.params"))
     }
 
-    private def stop() {
+    def stop() {
         System.out.println("Preparing to stop...")
         driver.stop()
     }
 }
 
-abstract class ClientDriver[I](config: Configuration, xfrm: InputTransformer[I]) {
-    private val client: Client = Client(config)
-
-    final def start(args: Array[String]) {
-        client.start()
-        clientStart(args)
-    }
-
-    final def stop() {
-        client.stop()
-        clientStop()
-    }
-
-    final def send(msg: I) {
-        client.postEvent(xfrm.transform(msg), TwoWay)
-    }
-
-    final def post(msg: I) {
-        client.postEvent(xfrm.transform(msg), OneWay)
-    }
-
-    protected def clientStart(args: Array[String])
-    protected def clientStop()
+trait Driver {
+    def start(conf: Option[Configuration])
+    def stop()
 }
+

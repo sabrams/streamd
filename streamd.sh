@@ -1,21 +1,102 @@
-#!/bin/sh
+#!/bin/bash
 
-#---------------------------------#
-# dynamically build the classpath #
-#---------------------------------#
+function usage()
+{
+    echo "--------------------------"
+    echo "     _|_ _ _ _  _  _|"
+    echo "    _)|_| (-(_||||(_|"
+    echo "        stream daemon ~~~"
+    echo "--------------------------"
+    echo "streamd.sh"
+    echo "    -help | -h        prints this message."
+    echo "    -debug <port>     run in debug mode, specify port."
+    echo "    -conf <conf file> run with the specified configuration file."
+    echo "    -plugins <path>   the path to the plugin directory."
+    echo "    -daemon           run as a daemon."
+    echo "    -client           run the client driver."
+}
+
 CLASSP=
-for i in `ls ${STREAMD_PLUGINS}/*.jar`
-do
-  CLASSP=${CLASSP}\|${i}
+
+function classpath()
+{
+    for i in `ls $1/*.jar`
+    do
+      CLASSP=${CLASSP}\|${i}
+    done
+}
+
+CONF=
+DAEMON=
+CLIENT=
+
+while [ "$1" != "" ]; do
+    PARAM=`echo $1 | awk -F= '{print $1}'`
+    VALUE=`echo $1 | awk -F= '{print $2}'`
+    case $PARAM in
+        -h | --help)
+            usage
+            exit
+            ;;
+        -debug)
+            JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,address=${VALUE},server=y"
+            ;;
+        -conf)
+            CONF=${VALUE}
+            ;;
+        -plugins)
+            classpath ${VALUE}
+            ;;
+        -client)
+            CLIENT="1"
+            ;;
+        -daemon)
+            DAEMON="1"
+            ;;
+        *)
+            echo "ERROR: unknown parameter \"$PARAM\""
+            usage
+            exit 1
+            ;;
+    esac
+    shift
 done
 
-CLASSP=${CLASSP}
-for i in `ls ${STREAMD_PLUGINS}/*.xml`
-do
-  CLASSP=${CLASSP}\|${i}
-done
+# DO CHECKS
+if [ -z "$STREAMD_HOME" ]; then
+    usage 
+    echo "ERROR: STREAMD_HOME is not set"
+    exit 1
+fi
 
-echo 'classpath:' ${CLASSP} 
-java -Done-jar.class.path=${CLASSP} -jar ${STREAMD_HOME}/streamd.one-jar.jar $*
+if [ -z "$CONF" ]; then 
+    usage
+    echo "ERROR: No configuration specified"
+    exit 1
+elif [ -e "$CONF" ]; then
+    echo "Configuration file is: $CONF"
+else  
+    usage
+    echo "ERROR: No configuration specified"
+    exit 1
+fi
 
-#java -Xdebug -Xrunjdwp:transport=dt_socket,address=8998,server=y,suspend=y -Done-jar.class.path=${CLASSP} -jar ${STREAMD_HOME}/streamd.one-jar.jar $*
+if [ -n "$CLIENT"] && [ -n "$DAEMON" ]; then
+    usage
+    echo "ERROR: Can not run client as a daemon"
+    exit 1
+fi
+
+if [ -n "$CLIENT" ]; then
+    JAVA_OPTS=${JAVA_OPTS} -Done-jar.main.class=com.appendr.streamd.Driver
+fi
+
+
+APP_ARGS=${CONF}
+
+if [ -z ${DAEMON} ]; then
+    APP_ARGS="$APP_ARGS Xdaemon"
+fi
+
+java $JAVA_OPTS -Done-jar.class.path=$CLASSP -jar $STREAMD_HOME/streamd.one-jar.jar $APP_ARGS
+
