@@ -98,7 +98,7 @@ if [ -z ${DAEMON} ] && [ -z "$CLIENT" ]; then
     APP_ARGS="$APP_ARGS Xdaemon"
 fi
 
-JAVA_OPTS="-Xmx3g -Xms3g ${JAVA_OPTS}"
+JAVA_OPTS="-server -Xmx3g -Xms3g ${JAVA_OPTS}"
 echo "---> running: java $JAVA_OPTS -Done-jar.class.path=$CLASSP -jar $STREAMD_HOME/streamd.one-jar.jar $APP_ARGS"
 java $JAVA_OPTS -Done-jar.class.path=$CLASSP -jar $STREAMD_HOME/streamd.one-jar.jar $APP_ARGS
 

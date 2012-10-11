@@ -35,7 +35,7 @@ import com.espertech.esper.client.deploy.EPDeploymentAdmin
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 class CEP extends StreamProc with PluginContextAware {
-    private val engine: Engine = new Engine(context)
+    private val engine: Engine = new Engine
 
     def proc(t: StreamTuple): Option[StreamTuple] = {
         engine.event(t._1, t._3)
@@ -47,134 +47,135 @@ class CEP extends StreamProc with PluginContextAware {
     }
 
     def open(conf: Option[Configuration]) {
+        engine.ctx = context
         engine.open(conf)
     }
 
     def close() {
         engine.close()
     }
-}
 
-class Engine(private val ctx: (Option[Sink], Option[Store]))
-    extends ConfigurableResource {
-    private val cfg: EsperConf = new EsperConf
-    private val options = {
-        val opts = new DeploymentOptions
-        opts.setCompile(true)
-        opts.setFailFast(true)
-        opts.setRollbackOnFail(true)
-        opts
-    }
-
-    private val esper: EPServiceProvider =
-        EPServiceProviderManager.getProvider(UUID.randomUUID().toString, cfg)
-
-    import com.appendr.streamd.conf.Configuration
-    def open(config: Option[Configuration]) {
-        val urlstr = config.get.getString("cep.config")
-        if (urlstr != null && urlstr.isDefined) cfg.configure(new URL(urlstr.get))
-        else cfg.configure()
-
-        esper.initialize()
-
-        val modules = config.get.getList("cep.modules")
-        if (modules != null) modules.foreach(m => activate(load(new URL(m))))
-    }
-
-    def close() {
-        esper.destroy()
-    }
-
-    def event(eventName: String, event: Map[_, _]) {
-        try {
-            import collection.JavaConversions.mapAsJavaMap
-            esper.getEPRuntime.sendEvent(event, eventName)
+    class Engine extends ConfigurableResource {
+        private[CEP] var ctx: (Option[Sink], Option[Store]) = (None, None)
+        private val cfg: EsperConf = new EsperConf
+        private val options = {
+            val opts = new DeploymentOptions
+            opts.setCompile(true)
+            opts.setFailFast(true)
+            opts.setRollbackOnFail(true)
+            opts
         }
-        catch {
-            case e: Exception => e.printStackTrace()
+
+        private val esper: EPServiceProvider =
+            EPServiceProviderManager.getProvider(UUID.randomUUID().toString, cfg)
+
+        import com.appendr.streamd.conf.Configuration
+        def open(config: Option[Configuration]) {
+            val urlstr = config.get.getString("cep.config")
+            if (urlstr != null && urlstr.isDefined) cfg.configure(new URL(urlstr.get))
+            else cfg.configure()
+
+            esper.initialize()
+
+            val modules = config.get.getList("cep.modules")
+            if (modules != null) modules.foreach(m => activate(load(new URL(m))))
         }
-    }
 
-    def getInstanceId = {
-        esper.getURI
-    }
+        def close() {
+            esper.destroy()
+        }
 
-    def getModule(id: String): ModuleInfo = {
-        getInfo(admin.getDeployment(id))
-    }
-
-    def getModules: List[ModuleInfo] = {
-        deploymentInfo.map(i => getInfo(i))
-    }
-
-    def load(url: URL) = {
-        admin.add(admin.read(url))
-    }
-
-    def parse(m: String) = {
-        admin.add(admin.parse(m))
-    }
-
-    def activate(id: String) {
-        if (!isDeployed(id)) {
-            // activate dependencies
-            val info = admin.getDeployment(id)
-            val uses = {
-                if(info != null) info.getModule.getUses
-                else null
+        def event(eventName: String, event: Map[_, _]) {
+            try {
+                import collection.JavaConversions.mapAsJavaMap
+                esper.getEPRuntime.sendEvent(event, eventName)
             }
+            catch {
+                case e: Exception => e.printStackTrace()
+            }
+        }
 
-            if (uses != null) {
-                for (s <- uses.toArray) {
-                    if (!admin.isDeployed(s.toString))
-                        throw new RuntimeException(String.format("module: %s is not deployed.", s.toString))
+        def getInstanceId = {
+            esper.getURI
+        }
+
+        def getModule(id: String): ModuleInfo = {
+            getInfo(admin.getDeployment(id))
+        }
+
+        def getModules: List[ModuleInfo] = {
+            deploymentInfo.map(i => getInfo(i))
+        }
+
+        def load(url: URL) = {
+            admin.add(admin.read(url))
+        }
+
+        def parse(m: String) = {
+            admin.add(admin.parse(m))
+        }
+
+        def activate(id: String) {
+            if (!isDeployed(id)) {
+                // activate dependencies
+                val info = admin.getDeployment(id)
+                val uses = {
+                    if(info != null) info.getModule.getUses
+                    else null
                 }
-            }
 
-            // activate module
-            val res = admin.deploy(id, options)
+                if (uses != null) {
+                    for (s <- uses.toArray) {
+                        if (!admin.isDeployed(s.toString))
+                            throw new RuntimeException(String.format("module: %s is not deployed.", s.toString))
+                    }
+                }
 
-            // add subscribers
-            import collection.JavaConversions.asScalaBuffer
-            val si: mutable.Buffer[EPStatement] = res.getStatements
-            for (s <- si) {
-                s.getAnnotations.foreach {
-                    a: Annotation => {
-                        if (a.isInstanceOf[Subscriber]) {
-                            val sub = Reflector[Object](a.asInstanceOf[Subscriber].value)
-                            if (sub.isInstanceOf[PluginContextAware]) {
-                                sub.asInstanceOf[PluginContextAware].context = ctx
+                // activate module
+                val res = admin.deploy(id, options)
+
+                // add subscribers
+                import collection.JavaConversions.asScalaBuffer
+                val si: mutable.Buffer[EPStatement] = res.getStatements
+                for (s <- si) {
+                    s.getAnnotations.foreach {
+                        a: Annotation => {
+                            if (a.isInstanceOf[Subscriber]) {
+                                val sub = Reflector[Object](a.asInstanceOf[Subscriber].value)
+                                if (sub.isInstanceOf[PluginContextAware]) {
+                                    sub.asInstanceOf[PluginContextAware].context = ctx
+                                }
+
+                                s.setSubscriber(sub)
                             }
-
-                            s.setSubscriber(sub)
                         }
                     }
                 }
             }
         }
-    }
 
-    private def getInfo(di: DeploymentInformation): ModuleInfo = {
-        new ModuleInfo {
-            val isActive = di.getState.equals(DeploymentState.DEPLOYED)
-            val deployed = di.getAddedDate.getTime
-            val name = di.getModule.getName
-            val statements = di.getItems.map(i => i.getExpression).toList
-            val id = di.getDeploymentId
+        private def getInfo(di: DeploymentInformation): ModuleInfo = {
+            new ModuleInfo {
+                val isActive = di.getState.equals(DeploymentState.DEPLOYED)
+                val deployed = di.getAddedDate.getTime
+                val name = di.getModule.getName
+                val statements = di.getItems.map(i => i.getExpression).toList
+                val id = di.getDeploymentId
+            }
         }
-    }
 
-    private def isDeployed(id: String): Boolean = {
-        val inf: DeploymentInformation = admin.getDeployment(id)
-        (inf != null) && (admin.isDeployed(inf.getModule.getName))
-    }
+        private def isDeployed(id: String): Boolean = {
+            val inf: DeploymentInformation = admin.getDeployment(id)
+            (inf != null) && (admin.isDeployed(inf.getModule.getName))
+        }
 
-    private def admin: EPDeploymentAdmin = {
-        esper.getEPAdministrator.getDeploymentAdmin
-    }
+        private def admin: EPDeploymentAdmin = {
+            esper.getEPAdministrator.getDeploymentAdmin
+        }
 
-    private def deploymentInfo: List[DeploymentInformation] = {
-        esper.getEPAdministrator.getDeploymentAdmin.getDeploymentInformation.toList
+        private def deploymentInfo: List[DeploymentInformation] = {
+            esper.getEPAdministrator.getDeploymentAdmin.getDeploymentInformation.toList
+        }
     }
 }
 

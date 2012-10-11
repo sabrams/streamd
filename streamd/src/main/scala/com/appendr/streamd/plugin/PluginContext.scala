@@ -34,14 +34,16 @@ class PluginContext(
 
     def close() {
         proc.close()
+        if (proc.isInstanceOf[PluginContextAware]) proc.asInstanceOf[PluginContextAware].context = (None, None)
         if (sink.isDefined) sink.get.close()
         if (store.isDefined) store.get.close()
     }
 
     def open(config: Option[Configuration]) {
-        proc.open(config.get.getSection("streamd.plugin.processor"))
+        if (proc.isInstanceOf[PluginContextAware]) proc.asInstanceOf[PluginContextAware].context = (sink, store)
         if (sink.isDefined) sink.get.open(config.get.getSection("streamd.plugin.sink"))
         if (store.isDefined) store.get.open(config.get.getSection("streamd.plugin.store"))
+        proc.open(config.get.getSection("streamd.plugin.processor"))
     }
 }
 

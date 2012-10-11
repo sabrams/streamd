@@ -90,11 +90,6 @@ sealed class PluginSpec(config: Configuration) extends PluginConfigSpec {
     def apply() = {
         val plugin = PluginContext(proc, sink, store)
         plugin.open(config)
-
-        if (proc.isInstanceOf[PluginContextAware]) {
-            proc.asInstanceOf[PluginContextAware].context = (sink, store)
-        }
-
         plugin
     }
 }

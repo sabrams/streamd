@@ -20,7 +20,7 @@ import collection.JavaConversions
 import com.appendr.streamd.cluster.{Router, Node}
 import com.appendr.streamd.conf.ConfigurableResource
 import com.appendr.streamd.util.{JMX, CounterMBean}
-import java.util.concurrent.atomic.{AtomicLong, AtomicInteger}
+import java.util.concurrent.atomic.AtomicLong
 import com.appendr.streamd.util.threading.ForkJoinStrategy
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

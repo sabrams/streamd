@@ -138,7 +138,7 @@ class App(private val args: Array[String]) {
 
         // start your engines
         server.start()
-        controlPort.start(config.apply("streamd.control.port").toInt, telnet)
+        controlPort.start(config.getInt("streamd.control.port").getOrElse(23), telnet)
     }
 
     def stop() {
