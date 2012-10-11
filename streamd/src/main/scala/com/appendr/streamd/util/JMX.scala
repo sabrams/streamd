@@ -14,7 +14,7 @@
 package com.appendr.streamd.util
 
 import java.lang.management.ManagementFactory
-import javax.management.{StandardMBean, ObjectName, ObjectInstance}
+import javax.management.{MXBean, StandardMBean, ObjectName, ObjectInstance}
 import org.slf4j.LoggerFactory
 import java.util.Hashtable
 
@@ -42,7 +42,7 @@ object JMX {
             server.unregisterMBean(bean.getObjectName)
         }
         catch {
-            case ex: Exception => log.error("Failed to unregistering mbean: %s".format(bean.getObjectName), ex)
+            case ex: Exception => log.error("Failed to unregister mbean: %s".format(bean.getObjectName), ex)
         }
     }
 
@@ -51,7 +51,7 @@ object JMX {
             server.unregisterMBean(objectNameForBean(bean, name))
         }
         catch {
-            case ex: Exception => log.error("Failed to unregistering mbean: %s".format(name), ex)
+            case ex: Exception => log.error("Failed to unregister mbean: %s".format(name), ex)
         }
     }
 
@@ -71,7 +71,14 @@ object JMX {
         def name: String = {
             val name = clazz.getSimpleName
             val index = name.lastIndexOf("MBean")
-            "org.appendr.streamd-%s".format(if (index == -1) name else name.substring(0, index))
+            "com.appendr.streamd.%s".format(if (index == -1) name else name.substring(0, index))
         }
     }
+}
+
+@MXBean
+trait CounterMBean {
+    def getName(): String
+    def getCount(): Long
+    def getTime(): Long
 }

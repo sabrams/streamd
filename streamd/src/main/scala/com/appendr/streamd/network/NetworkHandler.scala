@@ -16,9 +16,10 @@ package com.appendr.streamd.network
 import java.net.SocketAddress
 import org.slf4j.LoggerFactory
 import com.appendr.streamd.stream.{StreamEvent, StreamRoutingDispatcher}
-import com.appendr.streamd.stream.codec.CodecFactory
 import collection.mutable
 import com.appendr.streamd.plugin.{DefaultTelnetPlugin, TelnetPlugin}
+import com.appendr.streamd.util.{JMX, CounterMBean}
+import java.util.concurrent.atomic.AtomicLong
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -44,21 +45,27 @@ abstract class LoggingNetworkHandler extends NetworkHandler {
 }
 
 object DispatchingNetworkHandler {
-    def apply(d: StreamRoutingDispatcher,f: CodecFactory[StreamEvent]) = {
-        new DispatchingNetworkHandler(d, f)
+    def apply(d: StreamRoutingDispatcher) = {
+        new DispatchingNetworkHandler(d)
     }
 }
 
-class DispatchingNetworkHandler(
-    private val dispatcher: StreamRoutingDispatcher,
-    private val factory: CodecFactory[StreamEvent])
-    extends LoggingNetworkHandler {
-    private val codec = factory()
+class DispatchingNetworkHandler(private val dispatcher: StreamRoutingDispatcher)
+    extends LoggingNetworkHandler with CounterMBean {
+    private val count = new AtomicLong(0L)
+    private val lastCount = new AtomicLong(0L)
+    JMX.register(this, getName())
 
     def handleMessage(msg: Object): Option[NetworkMessage] = {
-        dispatcher.dispatch(codec.decode(msg.asInstanceOf[Array[Byte]]))
+        dispatcher.dispatch(msg.asInstanceOf[StreamEvent])
+        count.incrementAndGet()
+        lastCount.set(System.currentTimeMillis())
         None
     }
+
+    def getName() = "DispatchingNetworkHandler-" + hashCode()
+    def getCount() = count.longValue()
+    def getTime() = lastCount.longValue()
 }
 
 class NoOpNetworkHandler extends LoggingNetworkHandler {

@@ -19,6 +19,12 @@ import org.jboss.netty.handler.codec.serialization.{ClassResolvers, ObjectEncode
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+object ObjectPipelineFactory {
+    def apply(h: NetworkHandler) = {
+        new ObjectPipelineFactory(h)
+    }
+}
+
 class ObjectPipelineFactory(private val h: NetworkHandler)
     extends ChannelPipelineFactory {
     def getPipeline: ChannelPipeline = {

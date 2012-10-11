@@ -17,6 +17,9 @@ import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 import collection.mutable
 import com.appendr.streamd.network.NetworkHandler
+import com.appendr.streamd.util.threading.CachedThreadPoolStrategy
+import scalaz._
+import Scalaz._
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -30,6 +33,27 @@ trait ClientComponent[T] {
     def connect(address: InetSocketAddress)
     def disconnect()
     def send(t: T)
+}
+
+class ClientComponentAdaptor[T](private val wrapped: ClientComponent[T])
+    extends ClientComponent[T] {
+    private val a = actor[T]((t: T) => {
+        wrapped.send(t)
+        System.out.println("- Executing on thread: " + Thread.currentThread().getId)
+    })(CachedThreadPoolStrategy.strategy)
+    def name = wrapped.name
+    def connect(address: InetSocketAddress) = wrapped.connect(address)
+    def disconnect() = wrapped.disconnect()
+    def send(t: T) = actor(a) ! t
+}
+
+class ClientComponentPool[T](private val clients: List[ClientComponent[T]])
+    extends ClientComponent[T] {
+    def name = clients(0).name
+    def connect(address: InetSocketAddress) = clients.foreach(c => c.connect(address))
+    def disconnect() = clients.foreach(c => c.disconnect())
+    // TODO: Check if client is connected
+    def send(t: T) = clients(math.abs(t.hashCode() % clients.length)).send(t)
 }
 
 object ClientComponentRegistry {

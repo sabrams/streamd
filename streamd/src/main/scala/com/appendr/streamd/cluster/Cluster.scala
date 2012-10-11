@@ -20,19 +20,22 @@ import com.appendr.streamd.cluster.zk.{ZKConfigSpec, ZKClient}
 import com.appendr.streamd.network.netty.NettyClient
 import com.appendr.streamd.component.{ClientComponent, ClientComponentRegistry}
 import com.appendr.streamd.stream.{StreamTuple, StreamEvent}
-import com.appendr.streamd.stream.codec.CodecFactory
+import com.appendr.streamd.util.{JMX, CounterMBean}
+import java.util.concurrent.atomic.AtomicLong
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 object Cluster {
-    def apply(z: ZKConfigSpec, n: Option[Node], c: CodecFactory[StreamEvent]) = {
-        new Cluster(z, n, c)
+    def apply(z: ZKConfigSpec, n: Option[Node]) = {
+        new Cluster(z, n)
     }
 }
 
-class Cluster(zks: ZKConfigSpec, val node: Option[Node], private val codec: CodecFactory[StreamEvent])
-    extends Topology with Router {
+class Cluster(zks: ZKConfigSpec, val node: Option[Node])
+    extends Topology with Router with CounterMBean {
     private val log = LoggerFactory.getLogger(getClass)
+    private val count = new AtomicLong(0L)
+    private val lastCount = new AtomicLong(0L)
     val ccr = ClientComponentRegistry[StreamEvent]()
     val map = new mutable.HashMap[String, String]
     var zk: ZKClient = null
@@ -59,6 +62,8 @@ class Cluster(zks: ZKConfigSpec, val node: Option[Node], private val codec: Code
         val nodes = children.map((s: String) => new Node(s, new String(zk.get(s))))
         nodes.map((n: Node) => if (!isThisNode(n)) addClient(n))
         zk.watchAllChildren(map, (ba: Array[Byte]) => new String(ba), (s: String) => update(s))
+
+        JMX.register(this, getName())
     }
 
     def stop() {
@@ -70,6 +75,7 @@ class Cluster(zks: ZKConfigSpec, val node: Option[Node], private val codec: Code
 
         try {
             zk.close()
+            JMX.unregister(this, getName())
         }
         catch {
             case e: Exception => log.warn(e.getMessage)
@@ -93,7 +99,11 @@ class Cluster(zks: ZKConfigSpec, val node: Option[Node], private val codec: Code
     def route(n: Node, e: StreamEvent) {
         val cc = ccr.getClient(n.name)
         cc match {
-            case Some(cc: ClientComponent[StreamEvent]) => cc.send(e)
+            case Some(cc: ClientComponent[StreamEvent]) => {
+                cc.send(e)
+                count.incrementAndGet()
+                lastCount.set(System.currentTimeMillis())
+            }
             case None => {
                 if (isThisNode(n)) log.warn("--- Route to self ignored: " + n)
                 else log.warn("--- No client for node: " + n)
@@ -106,6 +116,10 @@ class Cluster(zks: ZKConfigSpec, val node: Option[Node], private val codec: Code
         if (node.isDefined) res = n.equals(node)
         res
     }
+
+    def getName() = "Cluster-" + this.hashCode()
+    def getCount() = count.longValue()
+    def getTime() = lastCount.longValue()
 
     private def update(s: String) {
         map.synchronized {
@@ -122,7 +136,7 @@ class Cluster(zks: ZKConfigSpec, val node: Option[Node], private val codec: Code
     private def addClient(n: Node): Node = {
         if (!n.equals(node) && !ccr.exists(n.name)) {
             val nd = NodeDecoder.apply(n)
-            val client = NettyClient[StreamEvent](nd.name, codec())
+            val client: ClientComponent[StreamEvent] = NettyClient[StreamEvent](nd.name)
             client.connect(new InetSocketAddress(nd.hpe._1, nd.hpe._2.toInt))
             ccr.addClient(nd.name, client)
         }

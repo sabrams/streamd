@@ -11,10 +11,10 @@
  *  (_||_)|_)(/_| |(_||
  *     |  |
  */
-package com.appendr.streamd.util
+package com.appendr.streamd.actors
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-trait Signalable {
-    def signal()
+class ActorPool {
+    // TODO: Pimp ScalaZ Actor
 }

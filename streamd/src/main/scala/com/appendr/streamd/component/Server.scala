@@ -44,7 +44,7 @@ sealed class Server(
     private val config: BaseConfig[_],
     private val ps: PluginSpec,
     private val cs: ClusterSpec) {
-    private val cluster = Cluster(cs, config.node, config.codec.value)
+    private val cluster = Cluster(cs, config.node)
     private val server = NettyServer()
     private val plugin = ps.apply()
     private val dispatch = StreamRoutingDispatcher(plugin.proc, cluster)
@@ -53,15 +53,15 @@ sealed class Server(
         // TODO: plugins need to be dynamically loaded and unloaded (version 0.1 it is static)
         // TODO: demux streams to multiple plugins by streamId (version 0.1 supports single stream)
         dispatch.start()
-        server.start(config.spec.port.value, DispatchingNetworkHandler(dispatch, config.codec.value))
+        server.start(config.spec.port.value, DispatchingNetworkHandler(dispatch))
         cluster.start()
     }
 
     def stop() {
-        dispatch.stop()
         cluster.stop()
-        server.stop()
+        dispatch.stop()
         plugin.close()
+        server.stop()
     }
 
     def getNode: Node = config.node.get

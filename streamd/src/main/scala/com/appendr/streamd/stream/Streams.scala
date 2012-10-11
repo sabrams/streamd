@@ -17,9 +17,11 @@ import scalaz._
 import Scalaz._
 import scala.collection
 import collection.JavaConversions
-import jsr166y.ForkJoinPool
 import com.appendr.streamd.cluster.{Router, Node}
 import com.appendr.streamd.conf.ConfigurableResource
+import com.appendr.streamd.util.{JMX, CounterMBean}
+import java.util.concurrent.atomic.{AtomicLong, AtomicInteger}
+import com.appendr.streamd.util.threading.ForkJoinStrategy
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -51,6 +53,9 @@ object Exchange {
     }
 }
 
+/**
+ * Message exchange patterns
+ */
 sealed trait Exchange {
     def name: String
 }
@@ -79,15 +84,23 @@ case class StreamTuple(override val _1: String, override val _2: String, overrid
     }
 }
 
+/**
+ * Framework Event
+ * @param src Source routing information
+ * @param stream Option[StreamTuple] carries data payload
+ */
 case class StreamEvent(src: Source, stream: Option[StreamTuple])
 
+/**
+ * Trait for custom stream preocessors
+ */
 trait StreamProc extends ConfigurableResource {
     def proc(t: StreamTuple): Option[StreamTuple]
     def coll(t: StreamTuple)
 }
 
 /**
- * StreamRoutingDispatcher delegates to configurable threaded stream dispatcher.
+ * StreamRoutingDispatcher delegates to threaded stream dispatcher.
  */
 object StreamRoutingDispatcher {
     def apply(p: StreamProc, r: Router) = {
@@ -95,23 +108,18 @@ object StreamRoutingDispatcher {
     }
 }
 
-class StreamRoutingDispatcher(private val p: StreamProc, private val r: Router) {
-    private val d: StreamDispatcher = new StreamDispatcher
-
-    def start() {
-        d.start()
-    }
-
-    def stop() {
-        d.stop()
-    }
-
-    // Must execute in a separate thread
-    def dispatch(e: StreamEvent) {
-        d.dispatch(e, fn)
-    }
-
-    private def fn(e: StreamEvent) {
+/**
+ * Actor dispatcher
+ * @param p the streamproc
+ * @param r the router
+ */
+class StreamRoutingDispatcher(
+    private val p: StreamProc,
+    private val r: Router) extends CounterMBean {
+    private val count = new AtomicLong(0L)
+    private val lastCount = new AtomicLong(0L)
+    private val a = actor[StreamEvent](
+    e => {
         import Lenses._
         e match {
             case StreamEvent(Source(_, _, OneWay), Some(x)) => p.proc(x)
@@ -125,34 +133,24 @@ class StreamRoutingDispatcher(private val p: StreamProc, private val r: Router) 
             }
             case _ =>
         }
+    })(ForkJoinStrategy.strategy)
+
+    def start() {
+        JMX.register(this, getName())
     }
 
-    private[StreamRoutingDispatcher] class StreamDispatcher {
-        implicit var executor: ForkJoinPool = null
-
-        def dispatch(e: StreamEvent, fn: (StreamEvent) => Unit) {
-            val a = actor[(StreamEvent, (StreamEvent) => Unit)] {
-                (m: (StreamEvent, (StreamEvent) => Unit)) => m._2(m._1)
-            }
-
-            a ! (e, fn)
-        }
-
-        def start() {
-            executor = new ForkJoinPool
-            (
-                Runtime.getRuntime.availableProcessors,
-                ForkJoinPool.defaultForkJoinWorkerThreadFactory,
-                new Thread.UncaughtExceptionHandler {
-                    def uncaughtException(t: Thread, e: Throwable) {
-                        System.err.println(String.format("uncaughtException in thread '%s'", t))
-                    }
-                }, true
-            )
-        }
-
-        def stop() {
-            executor.shutdown()
-        }
+    def stop() {
+        JMX.unregister(this, getName())
     }
+
+    def dispatch(e: StreamEvent) {
+        actor(a) ! e
+        count.incrementAndGet()
+        lastCount.set(System.currentTimeMillis())
+    }
+
+    def getName() = "StreamRoutingDispatcher-" + this.hashCode()
+    def getCount() = count.longValue()
+    def getTime() = lastCount.longValue()
 }
+

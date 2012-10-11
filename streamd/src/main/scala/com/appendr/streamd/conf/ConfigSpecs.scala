@@ -15,10 +15,9 @@ package com.appendr.streamd.conf
 
 import java.net.InetSocketAddress
 import com.appendr.streamd.cluster.zk.ZKConfigSpec
-import com.appendr.streamd.stream.{StreamEvent, StreamProc}
+import com.appendr.streamd.stream.StreamProc
 import com.appendr.streamd.cluster.Node
 import com.appendr.streamd.util.Reflector
-import com.appendr.streamd.stream.codec.CodecFactory
 import com.appendr.streamd.store.Store
 import com.appendr.streamd.sink.Sink
 import com.appendr.streamd.plugin.{PluginContextAware, PluginContext}
@@ -34,25 +33,21 @@ sealed class ClusterSpec(config: Configuration) extends ZKConfigSpec {
 abstract sealed class BaseConfigSpec[T] extends ConfigSpec[T] {
     var name = required[String]
     var port = required[Int]
-    var codec = required[CodecFactory[StreamEvent]]
 }
 
 abstract sealed class BaseConfig[T](val spec: BaseConfigSpec[T]) {
     val address = new InetSocketAddress(spec.port.value)
-    val codec = spec.codec
     val node: Option[Node]
 }
 
 sealed class ServerSpec(config: Configuration) extends ServerConfigSpec {
     name = config.apply("streamd.server.name")
     port = config.apply("streamd.server.port").toInt
-    codec = CodecFactory[StreamEvent](config.apply("streamd.codec"))
 }
 
 sealed class ClientSpec(config: Configuration) extends ClientConfigSpec {
     name = config.apply("streamd.client.name")
     port = config.apply("streamd.client.port").toInt
-    codec = CodecFactory[StreamEvent](config.apply("streamd.codec"))
 }
 
 sealed class ServerConfigSpec extends BaseConfigSpec[ServerConfig] {

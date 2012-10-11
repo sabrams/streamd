@@ -130,7 +130,7 @@ class App(private val args: Array[String]) {
         val plugins = config.getListAny("streamd.control.plugins")
 
         if (plugins != null) {
-            // TODO: create and register plugins
+            // TODO: create and register telnet plugins
         }
 
         // create the control port

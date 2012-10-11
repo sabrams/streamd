@@ -35,7 +35,7 @@ class NettyServer extends ServerComponent {
             Executors.newCachedThreadPool))
 
     def start(port: Int, h: NetworkHandler, opts: Option[Map[String, Any]]) {
-        bootstrap.setPipelineFactory(ByteArrayPipelineFactory(h))
+        bootstrap.setPipelineFactory(ObjectPipelineFactory(h))
         if (opts.isDefined) opts.get.foreach(kv => bootstrap.setOption(kv._1, kv._2))
         channels.add(bootstrap.bind(new InetSocketAddress(port)))
         channels.setReadable(true)

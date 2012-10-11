@@ -13,11 +13,8 @@
  */
 package com.appendr.streamd
 
-import connector.InputTransformer
-import component.Client
 import com.appendr.streamd.conf.Configuration
 import com.appendr.streamd.util.Reflector
-import stream.{OneWay, TwoWay}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -30,7 +27,7 @@ object Driver {
             "\n" + "----------------------------------------"
 
     def main(args: Array[String]) {
-        val driver = new DriverShell(args.head)
+        val driver = new Driver(args.head)
 
         Runtime.getRuntime.addShutdownHook(new Thread() {
             override def run() {
@@ -45,15 +42,15 @@ object Driver {
     }
 }
 
-private sealed class DriverShell(conf: String) {
+sealed class Driver(conf: String) {
     val config = Configuration.fromFile(conf)
-    val driver = Reflector.newInstance[Driver](
+    val driver = Reflector.newInstance[ClientDriver](
         config.apply("streamd.driver.class"))(Thread.currentThread().getContextClassLoader)
 
     System.out.println(Driver.banner)
 
     def start() {
-        driver.start(config.getSection("streamd.driver.params"))
+        driver.start(Some(config))
     }
 
     def stop() {
@@ -62,7 +59,7 @@ private sealed class DriverShell(conf: String) {
     }
 }
 
-trait Driver {
+trait ClientDriver {
     def start(conf: Option[Configuration])
     def stop()
 }

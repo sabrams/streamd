@@ -32,9 +32,9 @@ class ByteArrayPipelineFactory(private val h: NetworkHandler)
     def getPipeline: ChannelPipeline = {
         Channels.pipeline(
             new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4),
-            new ByteArrayDecoder(),
+            new ByteArrayDecoder,
             new LengthFieldPrepender(4),
-            new ByteArrayEncoder(),
+            new ByteArrayEncoder,
             new NettyHandler(h))
     }
 }
@@ -43,7 +43,7 @@ class ByteArrayDecoder extends OneToOneDecoder {
     override protected def decode(ctx: ChannelHandlerContext, channel: Channel, msg: Object): Object = {
         msg match {
             case buf: ChannelBuffer => toByteArray(buf)
-            case _ => msg
+            case _ =>  msg
         }
     }
 

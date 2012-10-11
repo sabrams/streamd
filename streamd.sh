@@ -39,7 +39,7 @@ while [ "$1" != "" ]; do
             exit
             ;;
         -debug)
-            JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,address=${VALUE},server=y"
+            JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,address=${VALUE},server=y ${JAVA_OPTS}"
             ;;
         -conf)
             CONF=${VALUE}
@@ -81,22 +81,24 @@ else
     exit 1
 fi
 
-if [ -n "$CLIENT"] && [ -n "$DAEMON" ]; then
+if [ -n "$CLIENT" ] && [ -n "$DAEMON" ]; then
     usage
     echo "ERROR: Can not run client as a daemon"
     exit 1
 fi
 
 if [ -n "$CLIENT" ]; then
-    JAVA_OPTS=${JAVA_OPTS} -Done-jar.main.class=com.appendr.streamd.Driver
+    JAVA_OPTS="-Done-jar.main.class=com.appendr.streamd.Driver ${JAVA_OPTS}"
 fi
 
 
 APP_ARGS=${CONF}
 
-if [ -z ${DAEMON} ]; then
+if [ -z ${DAEMON} ] && [ -z "$CLIENT" ]; then
     APP_ARGS="$APP_ARGS Xdaemon"
 fi
 
+JAVA_OPTS="-Xmx3g -Xms3g ${JAVA_OPTS}"
+echo "---> running: java $JAVA_OPTS -Done-jar.class.path=$CLASSP -jar $STREAMD_HOME/streamd.one-jar.jar $APP_ARGS"
 java $JAVA_OPTS -Done-jar.class.path=$CLASSP -jar $STREAMD_HOME/streamd.one-jar.jar $APP_ARGS
 

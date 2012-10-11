@@ -181,7 +181,7 @@
                         <configuration>
                             <attachToBuild>true</attachToBuild>
                             <classifier>onejar</classifier>
-                            <mainClass>com.appendr.streamd.Main</mainClass>
+                            <!-- mainClass>com.appendr.streamd.Main</mainClass -->
                         </configuration>
                         <goals>
                             <goal>one-jar</goal>

@@ -25,9 +25,9 @@ import com.appendr.streamd.stream.Source
 
 /**
  * Base class for all connectors
- * @param config
- * @param xfrm
- * @tparam I
+ * @param config configueration object
+ * @param xfrm  transformer
+ * @tparam I  type to transform
  */
 abstract class Connector[I](config: Configuration, xfrm: InputTransformer[I]) {
     private var cluster: Cluster = null
@@ -36,7 +36,7 @@ abstract class Connector[I](config: Configuration, xfrm: InputTransformer[I]) {
     val cs = new ClusterSpec(config)
     cs.validate()
 
-    cluster = new Cluster(cs, None, CodecFactory[StreamEvent](config.apply("streamd.codec")))
+    cluster = new Cluster(cs, None)
 
     final def start(args: Array[String]) {
         cluster.start()
@@ -44,8 +44,8 @@ abstract class Connector[I](config: Configuration, xfrm: InputTransformer[I]) {
     }
 
     final def stop() {
-        cluster.stop()
         connectorStop()
+        cluster.stop()
     }
 
     final def post(msg: I) {
@@ -60,12 +60,11 @@ abstract class Connector[I](config: Configuration, xfrm: InputTransformer[I]) {
 
 /**
  * Basic streaming File Connector
- * @param config
- * @param xfrm
+ * @param config config object
+ * @param xfrm transformer
  */
 class FileConnector(config: Configuration, xfrm: InputTransformer[Array[Byte]])
     extends Connector[Array[Byte]](config, xfrm) {
-
     protected def connectorStart(args: Array[String]) {
         val iter = io.Source.fromFile(new URI(args.head)).getLines()
         for (s <- iter) post(s.getBytes)

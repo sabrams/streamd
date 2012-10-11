@@ -7,6 +7,7 @@
         </encoder>
     </appender>
     <logger name="com.appendr.streamd" level="INFO"/>
+    <logger name="org.jboss.netty" level="INFO"/>
     <logger name="org.apache.zookeeper.ZooKeeper" level="WARN"/>
     <root level="INFO">
         <appender-ref ref="A1"/>
