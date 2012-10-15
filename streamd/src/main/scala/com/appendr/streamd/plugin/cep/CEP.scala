@@ -17,7 +17,7 @@ import com.appendr.streamd.stream.{StreamTuple, StreamProc}
 import com.appendr.streamd.store.Store
 import com.appendr.streamd.sink.Sink
 import com.appendr.streamd.conf.{ConfigurableResource, Configuration}
-import com.appendr.streamd.plugin.{TelnetPlugin, PluginContextAware}
+import com.appendr.streamd.plugin.PluginContextAware
 import com.espertech.esper.client.{ Configuration => EsperConf }
 import com.espertech.esper.client.deploy.DeploymentOptions
 import com.espertech.esper.client.EPServiceProvider
@@ -31,6 +31,7 @@ import com.appendr.streamd.util.Reflector
 import com.espertech.esper.client.deploy.DeploymentInformation
 import com.espertech.esper.client.deploy.DeploymentState
 import com.espertech.esper.client.deploy.EPDeploymentAdmin
+import com.appendr.streamd.controlport.TelnetHandler
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -145,7 +146,6 @@ class CEP extends StreamProc with PluginContextAware {
                                 if (sub.isInstanceOf[PluginContextAware]) {
                                     sub.asInstanceOf[PluginContextAware].context = ctx
                                 }
-
                                 s.setSubscriber(sub)
                             }
                         }
@@ -195,15 +195,10 @@ class DynaModule(
 
     override def toString = {
         val sb = new StringBuilder("module ")
-
         sb.append(mname.replace("-", ".m")).append(";\n")
         sb.append("import ").append(classOf[Subscriber].getName).append(";\n")
         sb.append("import ").append(subscriber.getName).append(";\n")
-
-        if (schema.isDefined) {
-            sb.append(schema.get)
-        }
-
+        if (schema.isDefined) sb.append(schema.get)
         sb.append(String.format("@Name('%s')\n", name))
         sb.append("@Description('Dynamic Esper Module')\n")
         sb.append(String.format("@Subscriber('%s')\n", subscriber.getName))
@@ -220,7 +215,7 @@ abstract class ModuleInfo {
     val isActive: Boolean
 }
 
-class ControlPort extends TelnetPlugin {
+class ControlPort extends TelnetHandler {
     val module = "CEP"
     def commands = List("info", "list", "load", "unload", "activate")
     def command(cmd: Array[String]) = {

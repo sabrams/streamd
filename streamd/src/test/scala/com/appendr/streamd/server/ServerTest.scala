@@ -20,7 +20,7 @@ import com.appendr.streamd.sink.Sink
 import com.appendr.streamd.component.{ServerComponent, Server}
 import com.appendr.streamd.stream.{StreamTuple, StreamProc}
 import com.appendr.streamd.store.Store
-import com.appendr.streamd.plugin.TelnetPlugin
+import com.appendr.streamd.controlport.TelnetHandler
 
 @RunWith(classOf[JUnitRunner])
 class ServerTest extends FunSuite with BeforeAndAfter {
@@ -57,7 +57,7 @@ class ServerTest extends FunSuite with BeforeAndAfter {
     }
 }
 
-class MyPlugin extends TelnetPlugin {
+class MyHandler extends TelnetHandler {
     val module = "test"
 
     def shutdown() {

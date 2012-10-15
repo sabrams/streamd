@@ -11,21 +11,21 @@
  *  (_||_)|_)(/_| |(_||
  *     |  |
  */
-package com.appendr.streamd.plugin
+package com.appendr.streamd.controlport
 
 import collection.mutable
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-trait TelnetPlugin {
+trait TelnetHandler {
     def module: String
     def shutdown()
     def commands: List[String]
     def command(cmd: Array[String]): String
 }
 
-class DefaultTelnetPlugin(private val cmdMap: mutable.HashMap[String, TelnetPlugin])
-    extends TelnetPlugin {
+class DefaultTelnetHandler(private val cmdMap: mutable.HashMap[String, TelnetHandler])
+    extends TelnetHandler {
     def module: String = "streamd"
 
     cmdMap.put("help", this)

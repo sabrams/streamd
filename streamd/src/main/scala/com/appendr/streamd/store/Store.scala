@@ -18,12 +18,14 @@ import com.appendr.streamd.conf.ConfigurableResource
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 trait Store extends ConfigurableResource {
-    def get(key: String): Object
-    def get(keys: String*): List[_]
-    def set(key: String, value: Object)
-    def add(key: String, value: (_, Object))
-    def rem(key: String): Object
-    def rem(key: (String, String)): Object
+    def get(key: String): Option[_]
+    def get(key: (String, String)): Option[_]
+    def get(keys: String*): List[Option[_]]
+    def set(key: String, value: Any)
+    def set(key: (String, String), value: Any)
+    def add(key: String, value: (_, Any))
+    def rem(key: String): Option[_]
+    def rem(key: (String, String)): Option[_]
     def has(key: String): Boolean
     def has(key: (String, String)): Boolean
     def inc(key: String)

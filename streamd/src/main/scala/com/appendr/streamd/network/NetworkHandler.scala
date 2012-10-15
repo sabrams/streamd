@@ -17,7 +17,7 @@ import java.net.SocketAddress
 import org.slf4j.LoggerFactory
 import com.appendr.streamd.stream.{StreamEvent, StreamRoutingDispatcher}
 import collection.mutable
-import com.appendr.streamd.plugin.{DefaultTelnetPlugin, TelnetPlugin}
+import com.appendr.streamd.controlport.{DefaultTelnetHandler, TelnetHandler}
 import com.appendr.streamd.util.{JMX, CounterMBean}
 import java.util.concurrent.atomic.AtomicLong
 
@@ -75,11 +75,11 @@ class NoOpNetworkHandler extends LoggingNetworkHandler {
 }
 
 class TelnetNetworkHandler extends LoggingNetworkHandler {
-    private val map = new mutable.HashMap[String, TelnetPlugin]
+    private val map = new mutable.HashMap[String, TelnetHandler]
 
-    registerPlugin(new DefaultTelnetPlugin(map))
+    registerPlugin(new DefaultTelnetHandler(map))
 
-    def registerPlugin(tp: TelnetPlugin) {
+    def registerPlugin(tp: TelnetHandler) {
         tp.commands.map(k => if (!map.contains(k)) map.put(tp.module + ":" + k, tp))
     }
 

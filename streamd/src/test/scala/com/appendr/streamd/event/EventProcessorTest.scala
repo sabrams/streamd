@@ -97,16 +97,24 @@ class ColorScore extends StreamProc with PluginContextAware {
 class HashStore extends Store {
     private val map = new ConcurrentHashMap[String, AtomicLong]
 
-    def set(key: String, value: Object) {
+    def set(key: String, value: Any) {
         map.put(key, value.asInstanceOf[AtomicLong])
     }
 
     def get(key: String) = {
-        map.get(key)
+        val r = map.get(key)
+        if (r != null) Some(r)
+        else None
+    }
+
+    def get(key: (String, String)) = {
+        throw new UnsupportedOperationException
     }
 
     def rem(key: String) = {
-        map.remove(key)
+        val r = map.remove(key)
+        if (r != null) Some(r)
+        else None
     }
 
     def has(key: String) = {
@@ -114,14 +122,14 @@ class HashStore extends Store {
     }
 
     def get(keys: String*) = {
-        keys.map(s => map.get(s)).toList
+        keys.map(s => {
+            val r = map.get(s)
+            if (r != null) Some(r)
+            else None
+        }).toList
     }
 
-    def set(kvs: (String, _)*) {
-        kvs.map(k => map.put(k._1, k._2.asInstanceOf[AtomicLong]))
-    }
-
-    def add(key: String, value: (_, Object)) {
+    def add(key: String, value: (_, Any)) {
         throw new UnsupportedOperationException
     }
 
@@ -152,4 +160,8 @@ class HashStore extends Store {
     def close() {}
 
     def open(config: Option[Configuration]) {}
+
+    def set(key: (String, String), value: Any) {
+        throw new UnsupportedOperationException
+    }
 }

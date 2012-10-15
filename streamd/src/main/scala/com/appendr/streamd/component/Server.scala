@@ -50,7 +50,7 @@ sealed class Server(
     private val dispatch = StreamRoutingDispatcher(plugin.proc, cluster)
 
     def start() {
-        // TODO: plugins need to be dynamically loaded and unloaded (version 0.1 it is static)
+        // TODO: plugins need to be dynamically loaded and unloaded (version 0.1 supports only 1 plugin)
         // TODO: demux streams to multiple plugins by streamId (version 0.1 supports single stream)
         dispatch.start()
         server.start(config.spec.port.value, DispatchingNetworkHandler(dispatch))

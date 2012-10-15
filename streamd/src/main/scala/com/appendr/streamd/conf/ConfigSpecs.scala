@@ -20,7 +20,7 @@ import com.appendr.streamd.cluster.Node
 import com.appendr.streamd.util.Reflector
 import com.appendr.streamd.store.Store
 import com.appendr.streamd.sink.Sink
-import com.appendr.streamd.plugin.{PluginContextAware, PluginContext}
+import com.appendr.streamd.plugin.PluginContext
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

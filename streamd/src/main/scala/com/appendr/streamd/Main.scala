@@ -127,10 +127,10 @@ class App(private val args: Array[String]) {
         server = Server(config)
 
         val telnet = new TelnetNetworkHandler
-        val plugins = config.getListAny("streamd.control.plugins")
+        val handlers = config.getListAny("streamd.control.plugins")
 
-        if (plugins != null) {
-            // TODO: create and register telnet plugins
+        if (handlers != null) {
+            // TODO: create and register telnet handlers
         }
 
         // create the control port

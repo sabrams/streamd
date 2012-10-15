@@ -13,17 +13,14 @@
  */
 package com.appendr.streamd.network.netty
 
-import java.net.{URI, InetSocketAddress}
+import java.net.InetSocketAddress
 import java.util.concurrent.Executors
 import org.jboss.netty.bootstrap.ClientBootstrap
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory
-import org.jboss.netty.channel.{ChannelPipeline, ChannelPipelineFactory, Channels, Channel}
+import org.jboss.netty.channel.Channel
 import org.slf4j.LoggerFactory
 import com.appendr.streamd.component.{ClientComponentPool, ClientComponentAdaptor, ClientComponent}
 import com.appendr.streamd.network.NoOpNetworkHandler
-import org.jboss.netty.handler.codec.http.websocketx.{CloseWebSocketFrame, TextWebSocketFrame, WebSocketVersion, WebSocketClientHandshakerFactory}
-import java.util.Collections
-import org.jboss.netty.handler.codec.http.{HttpRequestEncoder, HttpResponseDecoder}
 import com.appendr.streamd.util.{JMX, CounterMBean}
 import java.util.concurrent.atomic.AtomicLong
 import collection.mutable.ListBuffer
@@ -79,47 +76,4 @@ class NettyClient[T](val name: String) extends ClientComponent[T] with CounterMB
     def getName() = "NettyClient-" + hashCode()
     def getCount() = count.longValue()
     def getTime() = lastCount.longValue()
-}
-
-class NettyWebSocketClient(private val uri: URI) {
-    private val log = LoggerFactory.getLogger(getClass)
-    @volatile private var channel: Channel = null
-    private val bootstrap = new ClientBootstrap(
-        new NioClientSocketChannelFactory(
-            Executors.newCachedThreadPool,
-            Executors.newCachedThreadPool))
-    private val hs = new WebSocketClientHandshakerFactory().newHandshaker(
-        uri, WebSocketVersion.V13, null, false, Collections.emptyMap())
-
-    bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-        def getPipeline: ChannelPipeline = {
-            val pipeline = Channels.pipeline()
-            pipeline.addLast("decoder", new HttpResponseDecoder())
-            pipeline.addLast("encoder", new HttpRequestEncoder())
-            pipeline.addLast("ws-handler", new NettyWebSocketHandler(hs))
-            pipeline
-        }
-    })
-
-    def connect() {
-        if (channel == null || channel.isConnected == false) {
-            if (!uri.getScheme.equals("ws")) throw new IllegalArgumentException("Bad protocol: " + uri.getScheme)
-            val cf = bootstrap.connect(new InetSocketAddress(uri.getHost, uri.getPort))
-            cf.syncUninterruptibly()
-            channel = cf.getChannel
-            hs.handshake(channel).syncUninterruptibly()
-        }
-    }
-
-    def disconnect() {
-        channel.write(new CloseWebSocketFrame())
-        channel.getCloseFuture.awaitUninterruptibly()
-    }
-
-    def send(msg: String) {
-        if (channel.isWritable) {
-            if (log.isDebugEnabled) log.debug("Writing to channel: " + msg)
-            channel.write(new TextWebSocketFrame(msg))
-        }
-    }
 }
