@@ -11,7 +11,7 @@
  * (_||_)|_)(/_| |(_||
  *    |  |
  */
-package com.appendr.streamd.plugin.cep;
+package com.appendr.streamd.cep;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

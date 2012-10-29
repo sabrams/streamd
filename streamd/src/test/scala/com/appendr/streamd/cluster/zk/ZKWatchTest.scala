@@ -55,8 +55,8 @@ class ZKWatchTest extends FunSuite with BeforeAndAfter {
         // add watcher
         Client.client.watchAllChildren(map, ds, cb)
 
-        Client.client.createEphemeral("crafter", "test".getBytes)
-        Client.client.createEphemeral("crafters", "test".getBytes)
+        Client.client.createEphemeral("e1", "test".getBytes)
+        Client.client.createEphemeral("e2", "test".getBytes)
 
         Thread.sleep(2000)
         Client.client.deleteRecursive()

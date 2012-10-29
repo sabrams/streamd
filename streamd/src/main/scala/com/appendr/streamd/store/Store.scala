@@ -13,11 +13,11 @@
  */
 package com.appendr.streamd.store
 
-import com.appendr.streamd.conf.ConfigurableResource
+import com.appendr.streamd.util.LifeCycle
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-trait Store extends ConfigurableResource {
+trait Store extends LifeCycle {
     def get(key: String): Option[_]
     def get(key: (String, String)): Option[_]
     def get(keys: String*): List[Option[_]]

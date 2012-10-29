@@ -3,15 +3,15 @@ package com.appendr.streamd.sink
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import com.appendr.streamd.conf.Configuration
+import java.net.URI
 
 @RunWith(classOf[JUnitRunner])
 class FileSinkTest extends FunSuite with BeforeAndAfter {
-    private val sink = new FileSink
+    val uri = Thread.currentThread().getContextClassLoader.getResource("base.conf")
+    private val sink = new FileSink(uri.getPath, "test.txt")
 
     before {
-        val conf = Configuration.fromResource("test.conf")
-        sink.open(conf.getSection("streamd.plugin.sink"))
+        sink.open()
     }
 
     after {
@@ -25,11 +25,10 @@ class FileSinkTest extends FunSuite with BeforeAndAfter {
 
 //@RunWith(classOf[JUnitRunner])
 class WebSocketSinkTest extends FunSuite with BeforeAndAfter {
-    private val sink = new WebSocketSink
+    private val sink = new WebSocketSink(new URI("ws://localhost:8080"))
 
     before {
-        val conf = Configuration.fromResource("test.conf")
-        sink.open(conf.getSection("streamd.plugin.sink"))
+        sink.open()
     }
 
     after {

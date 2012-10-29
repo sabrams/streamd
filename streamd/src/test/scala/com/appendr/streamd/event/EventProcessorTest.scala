@@ -8,21 +8,20 @@ package com.appendr.streamd.event
  * To change this template use File | Settings | File Templates.
  */
 
+/*
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import com.appendr.streamd.conf.Configuration
 import com.appendr.streamd.stream.{TwoWay, StreamProc, StreamTuple}
 import com.appendr.streamd.connector.InputTransformer
-import com.appendr.streamd.component.{Client, Server}
 import com.appendr.streamd.store.Store
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
 import io.Source
-import com.appendr.streamd.plugin.PluginContextAware
 
 
-@RunWith(classOf[JUnitRunner])
+//@RunWith(classOf[JUnitRunner])
 class EventProcessorTest extends FunSuite with BeforeAndAfter {
     val config1 = Configuration.fromResource("server-a.conf")
     val config2 = Configuration.fromResource("server-b.conf")
@@ -164,4 +163,4 @@ class HashStore extends Store {
     def set(key: (String, String), value: Any) {
         throw new UnsupportedOperationException
     }
-}
+}*/

@@ -13,7 +13,7 @@
  */
 package com.appendr.streamd.sink
 
-import com.appendr.streamd.conf.{Configuration, ConfigurableResource}
+import com.appendr.streamd.util.LifeCycle
 import java.io.{File, FileOutputStream}
 import java.net.URI
 import org.slf4j.LoggerFactory
@@ -21,23 +21,19 @@ import com.appendr.streamd.network.netty.NettyWebSocketClient
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-trait Sink extends ConfigurableResource {
+trait Sink extends LifeCycle {
     def out(msg: Any)
 }
 
-class FileSink extends Sink {
+class FileSink(path: String, name: String) extends Sink {
     private val log = LoggerFactory.getLogger(getClass)
     private var stream: Option[FileOutputStream] = None
 
-    // TODO: externalize config strings with a spec
-    def open(config: Option[Configuration]) {
-        if (config.isDefined) {
-            val path: Option[String] = config.get.getString("path")
-            val f = new File(new URI(path.get))
-            if (!f.exists()) f.createNewFile()
-            f.setWritable(true)
-            if (path.isDefined) stream = Some(new FileOutputStream(f))
-        }
+    def open() {
+        val f = new File(path + File.pathSeparator + name)
+        if (!f.exists()) f.createNewFile()
+        f.setWritable(true)
+        stream = Some(new FileOutputStream(f))
     }
 
     def close() {
@@ -55,20 +51,19 @@ class FileSink extends Sink {
 
 class StdOutSink extends Sink {
     def close() {}
-    def open(config: Option[Configuration]) {}
+    def open() {}
     def out(msg: Any) {
         System.out.println(msg)
     }
 }
 
-class WebSocketSink extends Sink {
+class WebSocketSink(uri: URI) extends Sink {
     private var ws: Option[NettyWebSocketClient] = None
     def close() {
         if (ws.isDefined) ws.get.disconnect()
     }
 
-    def open(config: Option[Configuration]) {
-        val uri = URI.create(config.get.getString("uri").get)
+    def open() {
         ws = Some(new NettyWebSocketClient(uri))
         ws.get.connect()
     }

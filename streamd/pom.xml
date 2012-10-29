@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.appendr</groupId>
     <artifactId>streamd</artifactId>
-    <version>0.1</version>
+    <version>0.1.1</version>
     <repositories>
         <repository>
             <id>scala-tools.org</id>

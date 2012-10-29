@@ -55,7 +55,7 @@ class KryoCodec extends Codec[StreamEvent] {
     private val ser  = new ScalaMapSerializer[String](classOf[String])
     def encode(e: StreamEvent): Array[Byte] = {
         val o = new Output(new ByteArrayOutputStream)
-        o.writeString(e.src.streamId)
+        o.writeInt(e.src.streamId)
         o.writeString(e.src.node.name)
         o.writeString(e.src.node.data)
         o.writeString(e.src.e.name)
@@ -71,7 +71,7 @@ class KryoCodec extends Codec[StreamEvent] {
     def decode(ba: Array[Byte]): StreamEvent = {
         val i = new Input(1)
         i.setBuffer(ba)
-        val s = Source(i.readString, Node(i.readString, i.readString), Exchange(i.readString))
+        val s = Source(i.readInt, Node(i.readString, i.readString), Exchange(i.readString))
         val _1 = i.readString()
         val _2 = i.readString()
         val map = k.readObject(i, classOf[Map[String, Object]], ser)

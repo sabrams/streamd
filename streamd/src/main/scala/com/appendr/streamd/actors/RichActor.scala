@@ -11,12 +11,21 @@
  *  (_||_)|_)(/_| |(_||
  *     |  |
  */
-package com.appendr.streamd.conf
+package com.appendr.streamd.actors
 
-import java.io.Closeable
+import scalaz.concurrent.Actor
+import java.util.concurrent.ConcurrentLinkedQueue
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-trait ConfigurableResource extends Closeable {
-    def open(config: Option[Configuration])
+/**
+ * Evil pimp so we can monitor mbox size
+ */
+object RichActor {
+    class RichActor[T](a: Actor[T]) {
+        private val mbox = classOf[Actor[T]].getField("mbox").get(a).asInstanceOf[ConcurrentLinkedQueue[_]]
+        def getCount() = mbox.size()
+    }
+
+    implicit def richActor(a: Actor[_]) = new RichActor(a)
 }

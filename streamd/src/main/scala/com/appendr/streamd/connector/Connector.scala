@@ -13,11 +13,9 @@
  */
 package com.appendr.streamd.connector
 
-import java.util.UUID
 import java.net.URI
 import com.appendr.streamd.cluster.{Cluster, Node}
 import com.appendr.streamd.conf.{ClusterSpec, Configuration}
-import com.appendr.streamd.stream.codec.CodecFactory
 import com.appendr.streamd.stream.StreamEvent
 import com.appendr.streamd.stream.Source
 
@@ -31,7 +29,8 @@ import com.appendr.streamd.stream.Source
  */
 abstract class Connector[I](config: Configuration, xfrm: InputTransformer[I]) {
     private var cluster: Cluster = null
-    private val streamId = UUID.randomUUID().toString
+    // TODO: Clean this up so it does not rely on config
+    private val streamId = config.getString("streamd.client.streamid").get.hashCode
 
     val cs = new ClusterSpec(config)
     cs.validate()
@@ -65,11 +64,27 @@ abstract class Connector[I](config: Configuration, xfrm: InputTransformer[I]) {
  */
 class FileConnector(config: Configuration, xfrm: InputTransformer[Array[Byte]])
     extends Connector[Array[Byte]](config, xfrm) {
-    protected def connectorStart(args: Array[String]) {
+    protected override def connectorStart(args: Array[String]) {
         val iter = io.Source.fromFile(new URI(args.head)).getLines()
         for (s <- iter) post(s.getBytes)
     }
 
-    protected def connectorStop() {
+    protected override def connectorStop() {
+    }
+}
+
+/**
+ * Client that creates a local server to recieve callbacks
+ * @param config configueration object
+ * @param xfrm  transformer
+ */
+// TODO: Implement
+class ClientConnector(config: Configuration, xfrm: InputTransformer[Array[Byte]])
+    extends Connector[Array[Byte]](config, xfrm) {
+    protected override def connectorStart(args: Array[String]) {
+
+    }
+
+    protected override def connectorStop() {
     }
 }

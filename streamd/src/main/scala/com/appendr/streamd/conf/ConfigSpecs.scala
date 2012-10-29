@@ -15,12 +15,9 @@ package com.appendr.streamd.conf
 
 import java.net.InetSocketAddress
 import com.appendr.streamd.cluster.zk.ZKConfigSpec
-import com.appendr.streamd.stream.StreamProc
 import com.appendr.streamd.cluster.Node
 import com.appendr.streamd.util.Reflector
-import com.appendr.streamd.store.Store
-import com.appendr.streamd.sink.Sink
-import com.appendr.streamd.plugin.PluginContext
+import com.appendr.streamd.module.Module
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -45,51 +42,30 @@ sealed class ServerSpec(config: Configuration) extends ServerConfigSpec {
     port = config.apply("streamd.server.port").toInt
 }
 
-sealed class ClientSpec(config: Configuration) extends ClientConfigSpec {
-    name = config.apply("streamd.client.name")
-    port = config.apply("streamd.client.port").toInt
-}
-
 sealed class ServerConfigSpec extends BaseConfigSpec[ServerConfig] {
     def apply() = new ServerConfig(this)
-}
-
-sealed class ClientConfigSpec extends BaseConfigSpec[ClientConfig] {
-    def apply() = new ClientConfig(this)
 }
 
 sealed class ServerConfig(override val spec: ServerConfigSpec) extends BaseConfig[ServerConfig](spec) {
     override val node = Some(Node(spec.name.value, address.getHostName, address.getPort))
 }
 
-sealed class ClientConfig(override val spec: ClientConfigSpec) extends BaseConfig[ClientConfig](spec) {
-    override val node = Some(Node(spec.name.value, address.getHostName, address.getPort, routable = false))
+abstract sealed class ModuleConfigSpec extends ConfigSpec[List[Module]] {
+    var classes = required[Seq[String]]
 }
 
-abstract sealed class PluginConfigSpec extends ConfigSpec[PluginContext] {
-    var proc = required[StreamProc]
-    var sink = optional[Sink]
-    var store = optional[Store]
-}
-
-sealed class PluginSpec(config: Configuration) extends PluginConfigSpec {
-    proc = Reflector[StreamProc](config.apply("streamd.plugin.processor.class"))
-
-    val sinkClass = config.getString("streamd.plugin.sink.class")
-    sink = {
-        if (sinkClass.isDefined) Some(Reflector[Sink](sinkClass))
-        else None
-    }
-
-    val storeClass = config.getString("streamd.plugin.store.class")
-    store = {
-        if (storeClass.isDefined) Some(Reflector[Store](storeClass))
-        else None
-    }
-
+sealed class ModuleSpec(config: Configuration) extends ModuleConfigSpec {
+    classes = config.getList("streamd.modules")
     def apply() = {
-        val plugin = PluginContext(proc, sink, store)
-        plugin.open(config)
-        plugin
+        val modules = classes.map(s => Reflector[Module](s)).toList
+        modules.foreach(
+            m => {
+                if (m.sink.isDefined) m.proc.moduleContext = (m.sink, None)
+                if (m.store.isDefined) m.proc.moduleContext = (m.proc.moduleContext._1, m.store)
+            }
+        )
+
+        modules.foreach(m => m.open())
+        modules
     }
 }

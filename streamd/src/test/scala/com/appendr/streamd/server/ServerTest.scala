@@ -81,5 +81,5 @@ class TestProc extends StreamProc {
 
     def close() {}
 
-    def open(config: Option[Configuration]) {}
+    def open() {}
 }

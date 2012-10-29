@@ -11,10 +11,14 @@
  *  (_||_)|_)(/_| |(_||
  *     |  |
  */
-package com.appendr.streamd.actors
+package com.appendr.streamd.controlport
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-class ActorPool {
-    // TODO: Pimp ScalaZ Actor
+trait ControlPortHandler {
+    def command(cmd: Array[String]): String
+}
+
+trait ControlPort {
+    def getHandler() : ControlPortHandler
 }

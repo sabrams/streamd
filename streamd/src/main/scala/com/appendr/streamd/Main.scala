@@ -121,7 +121,7 @@ class App(private val args: Array[String]) {
         val config = Configuration.fromFile(loc)
 
         // dump the configuration
-        System.out.println(config.map.toString())
+        config.map.foreach(kv => System.out.println(kv._1 + " = " + kv._2))
 
         // create the node
         server = Server(config)

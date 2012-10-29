@@ -17,11 +17,10 @@ import collection.mutable
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-trait TelnetHandler {
+trait TelnetHandler extends ControlPortHandler {
     def module: String
     def shutdown()
     def commands: List[String]
-    def command(cmd: Array[String]): String
 }
 
 class DefaultTelnetHandler(private val cmdMap: mutable.HashMap[String, TelnetHandler])

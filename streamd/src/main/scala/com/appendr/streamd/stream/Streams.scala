@@ -18,10 +18,10 @@ import Scalaz._
 import scala.collection
 import collection.JavaConversions
 import com.appendr.streamd.cluster.{Router, Node}
-import com.appendr.streamd.conf.ConfigurableResource
-import com.appendr.streamd.util.{JMX, CounterMBean}
+import com.appendr.streamd.util.{JMX, CounterMBean, LifeCycle}
 import java.util.concurrent.atomic.AtomicLong
 import com.appendr.streamd.util.threading.ForkJoinStrategy
+import com.appendr.streamd.module.{ModuleContext, Module}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -65,7 +65,7 @@ case object TwoWay extends Exchange { val name = "TwoWay" }
 case object Route extends Exchange { val name = "Route" }
 case object Terminate extends Exchange { val name = "Terminate" }
 
-case class Source(streamId: String, node: Node, var e: Exchange = OneWay)
+case class Source(streamId: Int, node: Node, var e: Exchange = OneWay)
 
 /**
  * Give a generic Tuple a name as opposed to referencing (String, String, Map[String, Object])
@@ -94,17 +94,20 @@ case class StreamEvent(src: Source, stream: Option[StreamTuple])
 /**
  * Trait for custom stream preocessors
  */
-trait StreamProc extends ConfigurableResource {
+trait StreamProc extends LifeCycle with ModuleContext {
     def proc(t: StreamTuple): Option[StreamTuple]
     def coll(t: StreamTuple)
 }
 
 /**
  * StreamRoutingDispatcher delegates to threaded stream dispatcher.
+ * Creates a map of stream ids to associated processor
  */
 object StreamRoutingDispatcher {
-    def apply(p: StreamProc, r: Router) = {
-        new StreamRoutingDispatcher(p, r)
+    def apply(m: List[Module], r: Router) = {
+        var map = Map[Int, StreamProc]()
+        m.foreach(mod => { if (mod.proc.isDefined) map += (mod.id.hashCode -> mod.proc.get) })
+        new StreamRoutingDispatcher(map, r)
     }
 }
 
@@ -114,7 +117,7 @@ object StreamRoutingDispatcher {
  * @param r the router
  */
 class StreamRoutingDispatcher(
-    private val p: StreamProc,
+    private val p: Map[Int, StreamProc],
     private val r: Router) extends CounterMBean {
     private val count = new AtomicLong(0L)
     private val lastCount = new AtomicLong(0L)
@@ -122,11 +125,11 @@ class StreamRoutingDispatcher(
     e => {
         import Lenses._
         e match {
-            case StreamEvent(Source(_, _, OneWay), Some(x)) => p.proc(x)
-            case StreamEvent(Source(_, _, Terminate), Some(x)) => p.coll(x)
-            case StreamEvent(Source(_, _, Route), x) => r.route(e.src.node, stl.set(e, (sl.set(e.src, Terminate), x)))
-            case StreamEvent(Source(_, _, TwoWay), Some(x)) => {
-                p.proc(x) match {
+            case StreamEvent(Source(sid, _, OneWay), Some(x)) => p(sid).proc(x)
+            case StreamEvent(Source(sid, _, Terminate), Some(x)) => p(sid).coll(x)
+            case StreamEvent(Source(sid, _, Route), x) => r.route(e.src.node, stl.set(e, (sl.set(e.src, Terminate), x)))
+            case StreamEvent(Source(sid, _, TwoWay), Some(x)) => {
+                p(sid).proc(x) match {
                     case Some(res) => dispatch(stl.set(e, (sl.set(e.src, Route), Some(res))))
                     case None =>
                 }

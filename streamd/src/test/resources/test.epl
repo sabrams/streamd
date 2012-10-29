@@ -1,5 +1,5 @@
 module test.module;
-import com.appendr.streamd.plugin.cep.Subscriber;
+import com.appendr.streamd.cep.Subscriber;
 create map schema colors as (user String, color String, score float);
 
 @Name('test.module')

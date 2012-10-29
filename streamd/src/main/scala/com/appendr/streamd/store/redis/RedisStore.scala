@@ -15,42 +15,28 @@ package com.appendr.streamd.store.redis
 
 import com.appendr.streamd.store.Store
 import com.redis.{RedisClient, RedisClientPool}
-import com.appendr.streamd.conf.Configuration
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-class RedisStore extends Store {
+class RedisStore(private val host: String, private val port: Int)
+    extends Store {
     private var redis: Option[RedisClientPool] = None
-    private def client[T](body: RedisClient => T) = {
-        redis.get.withClient {
-            client => body(client)
-        }
-    }
+    private def client[T](body: RedisClient => T) = redis.get.withClient { client => body(client) }
 
-    def get(key: String) = {
-        client(r => r.get(key))
-    }
-
-    def get(key: (String, String)) = {
-        client(r => r.hget(key._1, key._2))
-    }
-
-    def get(keys: String*) = {
-        client(r => r.mget(keys).get)
-    }
-
-    def set(key: String, value: Any) {
-        client(r => r.set(key, value))
-    }
-
-    def set(key: (String, String), value: Any) {
-        client(r => r.hset(key._1, key._2, value))
-    }
-
-    def add(key: String, value: (_, Any)) {
-        client(r => r.lpush(key, value._1, value._2))
-    }
-
+    def get(key: String) = client(r => r.get(key))
+    def get(key: (String, String)) = client(r => r.hget(key._1, key._2))
+    def get(keys: String*) = client(r => r.mget(keys).get)
+    def set(key: String, value: Any) = client(r => r.set(key, value))
+    def set(key: (String, String), value: Any) = client(r => r.hset(key._1, key._2, value))
+    def add(key: String, value: (_, Any)) = client(r => r.lpush(key, value._1, value._2))
+    def has(key: String) = client(r => r.exists(key))
+    def has(key: (String, String)) = client(r => r.hexists(key._1, key._2))
+    def inc(key: String) = client(r => r.incr(key))
+    def inc(key: (String, String)) = client(r => r.hincrby(key._1, key._2, 1))
+    def inc(key: String, i: Int) = client(r => r.incrby(key, i))
+    def inc(key: (String, String), i: Int) = client(r => r.hincrby(key._1, key._2, i))
+    def open() = redis = Some(new RedisClientPool(host, port))
+    def close() = redis.get.close
     def rem(key: String) = {
         client {
             r => {
@@ -69,41 +55,5 @@ class RedisStore extends Store {
                 v
             }
         }
-    }
-
-    def has(key: String) = {
-        client(r => r.exists(key))
-    }
-
-    def has(key: (String, String)) = {
-        client(r => r.hexists(key._1, key._2))
-    }
-
-    def inc(key: String) {
-        client(r => r.incr(key))
-    }
-
-    def inc(key: (String, String)) {
-        client(r => r.hincrby(key._1, key._2, 1))
-    }
-
-    def inc(key: String, i: Int) {
-        client(r => r.incrby(key, i))
-    }
-
-    def inc(key: (String, String), i: Int) {
-        client(r => r.hincrby(key._1, key._2, i))
-    }
-
-    // TODO: try some defensive coding
-    def open(c: Option[Configuration]) {
-        redis = Some(new RedisClientPool(
-            c.get.getString("host").get,
-            c.get.getInt("port").get)
-        )
-    }
-
-    def close() {
-        redis.get.close
     }
 }
