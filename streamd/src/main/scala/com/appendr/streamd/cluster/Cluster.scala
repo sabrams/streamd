@@ -120,7 +120,7 @@ class Cluster(zks: ZKConfigSpec, val node: Option[Node])
     def getName() = "Cluster-" + this.hashCode()
     def getCount() = count.longValue()
     def getTime() = lastCount.longValue()
-    def getList(): Array[String] = getNodes().map(n => n.name + " " + n.data).toArray
+    def getList(): Array[String] = getNodes.map(n => n.name + " " + n.data).toArray
 
     private def update(s: String) {
         map.synchronized {

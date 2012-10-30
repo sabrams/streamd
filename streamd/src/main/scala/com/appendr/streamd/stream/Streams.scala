@@ -14,11 +14,12 @@
 package com.appendr.streamd.stream
 
 import scalaz._
+import concurrent.Actor
 import Scalaz._
 import scala.collection
 import collection.JavaConversions
 import com.appendr.streamd.cluster.{Router, Node}
-import com.appendr.streamd.util.{JMX, CounterMBean, LifeCycle}
+import com.appendr.streamd.util.{QueuedCounterMBean, JMX, CounterMBean, LifeCycle}
 import java.util.concurrent.atomic.AtomicLong
 import com.appendr.streamd.util.threading.ForkJoinStrategy
 import com.appendr.streamd.module.{ModuleContext, Module}
@@ -118,10 +119,10 @@ object StreamRoutingDispatcher {
  */
 class StreamRoutingDispatcher(
     private val p: Map[Int, StreamProc],
-    private val r: Router) extends CounterMBean {
+    private val r: Router) extends QueuedCounterMBean {
     private val count = new AtomicLong(0L)
     private val lastCount = new AtomicLong(0L)
-    private val a = actor[StreamEvent](
+    private val a: Actor[StreamEvent] = actor[StreamEvent](
     e => {
         import Lenses._
         e match {
@@ -152,8 +153,10 @@ class StreamRoutingDispatcher(
         lastCount.set(System.currentTimeMillis())
     }
 
-    def getName() = "StreamRoutingDispatcher-" + this.hashCode()
+    import com.appendr.streamd.actors.RichActor._
+    def getQueuedCount() = a.getCount
     def getCount() = count.longValue()
+    def getName() = "StreamRoutingDispatcher-" + this.hashCode()
     def getTime() = lastCount.longValue()
 }
 

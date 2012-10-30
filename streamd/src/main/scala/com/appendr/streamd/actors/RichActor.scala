@@ -23,9 +23,17 @@ import java.util.concurrent.ConcurrentLinkedQueue
  */
 object RichActor {
     class RichActor[T](a: Actor[T]) {
-        private val mbox = classOf[Actor[T]].getField("mbox").get(a).asInstanceOf[ConcurrentLinkedQueue[_]]
-        def getCount() = mbox.size()
+        val field = a.getClass.getDeclaredField("scalaz$concurrent$Actor$$mbox")
+        field.setAccessible(true)
+        val mbox = field.get(a).asInstanceOf[ConcurrentLinkedQueue[_]]
+        field.setAccessible(false)
+        def getCount(): Int = mbox.size()
     }
 
-    implicit def richActor(a: Actor[_]) = new RichActor(a)
+    implicit def actor2RichActor[T](a: Actor[T]) = new RichActor(a)
 }
+
+
+
+
+

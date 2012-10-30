@@ -89,5 +89,12 @@ trait ListableMBean {
 }
 
 @MXBean
-trait ListableCounterMBean extends CounterMBean with ListableMBean {
+trait QueuedCountMBean {
+    def getQueuedCount(): Int
 }
+
+@MXBean
+trait ListableCounterMBean extends CounterMBean with ListableMBean
+
+@MXBean
+trait QueuedCounterMBean extends CounterMBean with QueuedCountMBean

@@ -13,7 +13,7 @@
  */
 package com.appendr.streamd.cluster
 
-import com.appendr.streamd.util.{ListableMBean, Observable, ConsistentHash}
+import com.appendr.streamd.util.{Observable, ConsistentHash}
 import scala.collection.mutable.HashMap
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -27,7 +27,7 @@ class Topology extends Observable {
         nodeMap(nodeName)
     }
 
-    def getNodes() = nodeMap.values.toList
+    def getNodes = nodeMap.values.toList
     override def toString: String = nodeMap.toString()
 
     /**
