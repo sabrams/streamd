@@ -82,3 +82,12 @@ trait CounterMBean {
     def getCount(): Long
     def getTime(): Long
 }
+
+@MXBean
+trait ListableMBean {
+    def getList(): Array[String]
+}
+
+@MXBean
+trait ListableCounterMBean extends CounterMBean with ListableMBean {
+}

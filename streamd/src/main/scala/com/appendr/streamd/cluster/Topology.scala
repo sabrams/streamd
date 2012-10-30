@@ -13,7 +13,7 @@
  */
 package com.appendr.streamd.cluster
 
-import com.appendr.streamd.util.{Observable, ConsistentHash}
+import com.appendr.streamd.util.{ListableMBean, Observable, ConsistentHash}
 import scala.collection.mutable.HashMap
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -27,6 +27,9 @@ class Topology extends Observable {
         nodeMap(nodeName)
     }
 
+    def getNodes() = nodeMap.values.toList
+    override def toString: String = nodeMap.toString()
+
     /**
      * add a node
      */
@@ -34,6 +37,7 @@ class Topology extends Observable {
         val decoded = NodeDecoder(node)
         nodeMap.put(decoded.name, node)
         ring += decoded.name
+        notifyObservers
     }
 
     /**
@@ -43,6 +47,7 @@ class Topology extends Observable {
         val decoded = NodeDecoder(node)
         ring -= decoded.name
         nodeMap -= decoded.name
+        notifyObservers
     }
 
     /**
@@ -51,15 +56,6 @@ class Topology extends Observable {
     protected def -=(nodeName: String) = {
         ring -= nodeName
         nodeMap -= nodeName
+        notifyObservers
     }
-
-    /**
-     * Force an update of the entire topology.
-     * This will cause an intersection of the nodeMap with topMap
-     */
-    def update(topMap: Map[String, Node]) {
-         notifyObservers
-    }
-
-    override def toString: String = nodeMap.toString()
 }

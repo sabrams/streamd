@@ -20,7 +20,7 @@ import com.appendr.streamd.cluster.zk.{ZKConfigSpec, ZKClient}
 import com.appendr.streamd.network.netty.NettyClient
 import com.appendr.streamd.component.{ClientComponent, ClientComponentRegistry}
 import com.appendr.streamd.stream.{StreamTuple, StreamEvent}
-import com.appendr.streamd.util.{JMX, CounterMBean}
+import com.appendr.streamd.util.{ListableCounterMBean, JMX, CounterMBean}
 import java.util.concurrent.atomic.AtomicLong
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -32,7 +32,7 @@ object Cluster {
 }
 
 class Cluster(zks: ZKConfigSpec, val node: Option[Node])
-    extends Topology with Router with CounterMBean {
+    extends Topology with Router with ListableCounterMBean {
     private val log = LoggerFactory.getLogger(getClass)
     private val count = new AtomicLong(0L)
     private val lastCount = new AtomicLong(0L)
@@ -120,6 +120,7 @@ class Cluster(zks: ZKConfigSpec, val node: Option[Node])
     def getName() = "Cluster-" + this.hashCode()
     def getCount() = count.longValue()
     def getTime() = lastCount.longValue()
+    def getList(): Array[String] = getNodes().map(n => n.name + " " + n.data).toArray
 
     private def update(s: String) {
         map.synchronized {
