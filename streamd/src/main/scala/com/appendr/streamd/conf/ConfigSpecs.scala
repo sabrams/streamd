@@ -30,6 +30,7 @@ sealed class ClusterSpec(config: Configuration) extends ZKConfigSpec {
 abstract sealed class BaseConfigSpec[T] extends ConfigSpec[T] {
     var name = required[String]
     var port = required[Int]
+    var cport = required[Int]
 }
 
 abstract sealed class BaseConfig[T](val spec: BaseConfigSpec[T]) {
@@ -40,6 +41,7 @@ abstract sealed class BaseConfig[T](val spec: BaseConfigSpec[T]) {
 sealed class ServerSpec(config: Configuration) extends ServerConfigSpec {
     name = config.apply("streamd.server.name")
     port = config.apply("streamd.server.port").toInt
+    cport = config.apply("streamd.server.control.port").toInt
 }
 
 sealed class ServerConfigSpec extends BaseConfigSpec[ServerConfig] {

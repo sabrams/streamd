@@ -1,7 +1,6 @@
 package com.appendr.streamd.util
 
-import com.appendr.streamd.module.Module
-import com.appendr.streamd.cep.CEP
+import com.appendr.streamd.cep.CEPModule
 import com.appendr.streamd.sink.StdOutSink
 import com.appendr.streamd.store.Store
 import java.util.concurrent.ConcurrentHashMap
@@ -14,17 +13,17 @@ import sun.misc.AtomicLong
  * Time: 4:00 PM
  * To change this template use File | Settings | File Templates.
  */
-class TestCEPModule extends Module {
-    val cfg = Thread.currentThread().getContextClassLoader.getResource("esper.cfg.xml")
-    val mod = Thread.currentThread().getContextClassLoader.getResource("test.epl")
+class TestCEPModule(c1: Option[String], c2: Option[List[String]]) extends CEPModule(c1, c2) {
 
-    private val cep = Some(new CEP(Some(cfg.toString), Some(List(mod.toString))))
+    def this() {
+        this(Some(Thread.currentThread().getContextClassLoader.getResource("esper.cfg.xml").toString),
+            Some(List(Thread.currentThread().getContextClassLoader.getResource("test.epl").toString)))
+    }
+
     private val hash = Some(new HashStore)
     private val out = Some(new StdOutSink)
-    def proc = cep
-    def sink = out
-    def store = hash
-    def cport = None
+    override def sink = out
+    override def store = hash
 }
 
 class HashStore extends Store {

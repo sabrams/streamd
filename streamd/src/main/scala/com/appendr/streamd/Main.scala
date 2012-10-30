@@ -13,11 +13,9 @@
  */
 package com.appendr.streamd
 
-import component.{ServerComponent, Server}
+import component.Server
 import conf.Configuration
 import java.io.File
-import network.netty.NettyTextServer
-import com.appendr.streamd.network.TelnetNetworkHandler
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -96,7 +94,6 @@ sealed class Main {
 
 class App(private val args: Array[String]) {
     private var server: Server = null
-    private var controlPort: ServerComponent = null
 
     def start() {
         val loc = args.size match {
@@ -126,24 +123,13 @@ class App(private val args: Array[String]) {
         // create the node
         server = Server(config)
 
-        val telnet = new TelnetNetworkHandler
-        val handlers = config.getListAny("streamd.control.plugins")
-
-        if (handlers != null) {
-            // TODO: create and register telnet handlers
-        }
-
-        // create the control port
-        controlPort = NettyTextServer()
-
         // start your engines
         server.start()
-        controlPort.start(config.getInt("streamd.control.port").getOrElse(23), telnet)
+
     }
 
     def stop() {
         if (server != null) server.stop()
-        if (controlPort != null) controlPort.stop()
     }
 }
 

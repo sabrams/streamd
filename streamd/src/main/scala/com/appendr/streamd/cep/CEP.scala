@@ -29,30 +29,15 @@ import com.appendr.streamd.util.Reflector
 import com.espertech.esper.client.deploy.DeploymentInformation
 import com.espertech.esper.client.deploy.DeploymentState
 import com.espertech.esper.client.deploy.EPDeploymentAdmin
-import com.appendr.streamd.controlport.{ControlPortHandler, TelnetHandler}
-import com.sun.xml.internal.ws.api.pipe.Engine
-import com.appendr.streamd.module.ModuleContext
+import com.appendr.streamd.controlport.TelnetHandler
+import com.appendr.streamd.module.{Module, ModuleContext}
+import com.appendr.streamd.cep.CEP.{CEPControlPort, Engine}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-class CEP(confFile: Option[String] = None, modFiles: Option[List[String]] = None)
-    extends StreamProc {
-    private val engine: Engine = new Engine
-
-    engine.init(confFile)
-
-    def proc(t: StreamTuple): Option[StreamTuple] = {
-        engine.event(t._1, t._3)
-        None
-    }
-
-    def coll(t: StreamTuple) {}
-    def close() = engine.close()
-    def open() = {
-        engine.ctx = moduleContext
-        if (modFiles.isDefined) {
-            modFiles.get.foreach(m => engine.activate(engine.load(new URL(m))))
-        }
+object CEP {
+    def apply(confFile: Option[String] = None, modFiles: Option[List[String]] = None) = {
+        new CEP(confFile, modFiles)
     }
 
     class Engine {
@@ -85,15 +70,18 @@ class CEP(confFile: Option[String] = None, modFiles: Option[List[String]] = None
             }
         }
 
-        def close() = esper.destroy()
-        def getInstanceId = esper.getURI
-        def getModule(id: String): ModuleInfo = getInfo(admin.getDeployment(id))
-        def getModules: List[ModuleInfo] = deploymentInfo.map(i => getInfo(i))
-        def load(url: URL) = admin.add(admin.read(url))
-        def parse(m: String) = admin.add(admin.parse(m))
-        def getHandler: ControlPortHandler = null
+        def close() {
+            esper.destroy()
+        }
 
-        def activate(id: String) {
+        def getInstanceId = esper.getURI
+        def getModule(id: String): CEPModuleInfo = getInfo(admin.getDeployment(id))
+        def getModules: List[CEPModuleInfo] = deploymentInfo.map(i => getInfo(i))
+        def load(url: URL) = admin.add(admin.read(url))
+        def unload(id: String) = admin.undeployRemove(id)
+        def parse(m: String) = admin.add(admin.parse(m))
+        def deactivate(id: String) = admin.undeploy(id).getDeploymentId
+        def activate(id: String) = {
             if (!isDeployed(id)) {
                 // activate dependencies
                 val info = admin.getDeployment(id)
@@ -129,10 +117,12 @@ class CEP(confFile: Option[String] = None, modFiles: Option[List[String]] = None
                     }
                 }
             }
+
+            id
         }
 
-        private def getInfo(di: DeploymentInformation): ModuleInfo = {
-            new ModuleInfo {
+        private def getInfo(di: DeploymentInformation): CEPModuleInfo = {
+            new CEPModuleInfo {
                 val isActive = di.getState.equals(DeploymentState.DEPLOYED)
                 val deployed = di.getAddedDate.getTime
                 val name = di.getModule.getName
@@ -152,6 +142,75 @@ class CEP(confFile: Option[String] = None, modFiles: Option[List[String]] = None
 
         private def deploymentInfo: List[DeploymentInformation] = {
             esper.getEPAdministrator.getDeploymentAdmin.getDeploymentInformation.toList
+        }
+    }
+
+    class CEPControlPort(private val engine: CEP) extends TelnetHandler {
+        val module = "cep"
+        def commands = List("activate", "deactivate", "epl", "info", "list", "load", "unload")
+        def commandHelp = List(
+            "activate   <id>     activate an epl module by deployment id",
+            "deactivate <id>     deactivate an epl module by deployment id",
+            "epl        <epl>    raw epl statement",
+            "info                print engine instance id",
+            "list                list all epl modules",
+            "load       <url>    load a module file from a url",
+            "unload     <id>     unload and deactivate an epl module by deployment id")
+
+        def command(cmd: Array[String]) = {
+            cmd.head match {
+                case "epl" => doCmd(cmd.tail, doEPL)
+                case "info" => doCmd(cmd.tail, doInfo)
+                case "list" => doCmd(cmd.tail, doList)
+                case "load" => doCmd(cmd.tail, doLoad)
+                case "unload" => doCmd(cmd.tail, doUnload)
+                case "activate" => doCmd(cmd.tail, doActivate)
+                case "deactivate" => doCmd(cmd.tail, doDeactivate)
+                case _ => "Unknown command: " + cmd.head
+            }
+        }
+
+        def shutdown() {
+        }
+
+        private def doLoad(cmd: Array[String]) = engine.engine.load(new URL(cmd.head))
+        private def doUnload(cmd: Array[String]) = engine.engine.unload(cmd.head).getDeploymentId
+        private def doActivate(cmd: Array[String]) = engine.engine.activate(cmd.head)
+        private def doDeactivate(cmd: Array[String]) = engine.engine.deactivate(cmd.head)
+        private def doEPL(cmd: Array[String]) = engine.engine.parse(cmd.mkString(" "))
+        private def doInfo(cmd: Array[String]) = "Engine id: " + engine.engine.getInstanceId
+        private def doList(cmd: Array[String]) = {
+            val sb = new mutable.StringBuilder()
+            engine.engine.getModules.foreach(m => sb.append("\n" + m.toString))
+            sb.toString()
+        }
+
+        private def doCmd(cmd: Array[String], fn:(Array[String]) => String) = {
+            try { fn(cmd) + "\n"}
+            catch { case e: Exception => e.getMessage }
+        }
+    }
+}
+
+class CEP(confFile: Option[String] = None, modFiles: Option[List[String]] = None)
+    extends StreamProc {
+    private val engine: Engine = new Engine
+
+    engine.init(confFile)
+
+    def proc(t: StreamTuple): Option[StreamTuple] = {
+        engine.event(t._1, t._3)
+        None
+    }
+
+    def coll(t: StreamTuple) {}
+    def close() {
+        engine.close()
+    }
+    def open() {
+        engine.ctx = moduleContext
+        if (modFiles.isDefined) {
+            modFiles.get.foreach(m => engine.activate(engine.load(new URL(m))))
         }
     }
 }
@@ -184,48 +243,38 @@ class DynaModule(
     }
 }
 
-abstract class ModuleInfo {
+abstract class CEPModuleInfo {
     val id: String
     val name: String
     val deployed: Date
     val statements: List[String]
     val isActive: Boolean
+
+    override def toString = {
+        val sb = new mutable.StringBuilder("EPL info: \n")
+        sb.append("deployment id: ").append(id).append("\n")
+        sb.append("name: ").append(name).append("\n")
+        sb.append("deployed on: ").append(deployed).append("\n")
+        sb.append("active: ").append(isActive).append("\n")
+        sb.append("statements: ").append("\n")
+        statements.foreach(s => sb.append("    ").append(s).append("\n"))
+        sb.toString()
+    }
 }
 
-class CEPControlPort(private val engine: Engine) extends TelnetHandler {
-    val module = "CEP"
-    def commands = List("info", "list", "load", "unload", "activate")
-    def command(cmd: Array[String]) = {
-        cmd.head match {
-            case "info" => doInfo(cmd.tail)
-            case "list" => doList(cmd.tail)
-            case "load" => doLoad(cmd.tail)
-            case "unload" => doUnload(cmd.tail)
-            case "activate" => doActivate(cmd.tail)
-            case _ => "Unknown command: " + cmd.head
-        }
+class CEPModule(private val cep: Option[CEP]) extends Module {
+    private val port = Some(new CEPControlPort(cep.get))
+
+    def this() {
+        this(Some(CEP()))
     }
 
-    def shutdown() {
+    def this(conf: Option[String], eplModules: Option[List[String]]) {
+        this(Some(CEP(conf, eplModules)))
     }
 
-    private def doInfo(cmd: Array[String]) = {
-        "Not implemented"
-    }
-
-    private def doList(cmd: Array[String]) = {
-        "Not implemented"
-    }
-
-    private def doLoad(cmd: Array[String]) = {
-        "Not implemented"
-    }
-
-    private def doUnload(cmd: Array[String]) = {
-        "Not implemented"
-    }
-
-    private def doActivate(cmd: Array[String]) = {
-        "Not implemented"
-    }
+    def proc() = cep
+    def cport() = port
+    def sink(): Option[Sink] = None
+    def store(): Option[Store] = None
 }

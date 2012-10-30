@@ -16,9 +16,8 @@ package com.appendr.streamd.module
 import com.appendr.streamd.stream.StreamProc
 import com.appendr.streamd.sink.Sink
 import com.appendr.streamd.store.Store
-import com.appendr.streamd.controlport.ControlPortHandler
+import com.appendr.streamd.controlport.TelnetHandler
 import com.appendr.streamd.util.LifeCycle
-import com.appendr.streamd.conf.Configuration
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -27,7 +26,7 @@ trait Module extends LifeCycle {
     def proc(): Option[StreamProc]
     def sink(): Option[Sink]
     def store(): Option[Store]
-    def cport(): Option[ControlPortHandler]
+    def cport(): Option[TelnetHandler]
     def open() {
         if (proc().isDefined) proc().get.open()
         if (sink().isDefined) sink().get.open()

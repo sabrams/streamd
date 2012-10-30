@@ -16,7 +16,7 @@ import com.appendr.streamd.component._
 import com.appendr.streamd.stream.StreamTuple
 import com.appendr.streamd.connector.{ByteArrayToStringInput, FileConnector, InputTransformer}
 
-@RunWith(classOf[JUnitRunner])
+//@RunWith(classOf[JUnitRunner])
 class FileConnectorTest extends FunSuite with BeforeAndAfter {
     val config = Configuration.fromResource("client.conf")
     var connector: FileConnector = null
@@ -43,10 +43,10 @@ class FileConnectorTest extends FunSuite with BeforeAndAfter {
     }
 
     after {
-        Thread.sleep(5000)
         connector.stop()
         node1.stop()
         node2.stop()
+        Thread.sleep(5000)
     }
 
     test("connector sends events") {

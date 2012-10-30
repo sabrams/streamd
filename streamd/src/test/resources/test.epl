@@ -4,4 +4,4 @@ create map schema colors as (user String, color String, score float);
 
 @Name('test.module')
 @Subscriber('com.appendr.streamd.cep.ArraySubscriber')
-select distinct color, count(color) as count, avg(score) as averageScore from colors.win:time_accum(1000) output snapshot every 5 seconds;
+select distinct color, count(color) as count, avg(score) as averageScore from colors.win:time_accum(500);

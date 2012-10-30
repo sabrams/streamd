@@ -17,10 +17,12 @@ import collection.mutable
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-trait TelnetHandler extends ControlPortHandler {
+trait TelnetHandler {
     def module: String
     def shutdown()
     def commands: List[String]
+    def commandHelp: List[String]
+    def command(cmd: Array[String]): String
 }
 
 class DefaultTelnetHandler(private val cmdMap: mutable.HashMap[String, TelnetHandler])
@@ -30,12 +32,13 @@ class DefaultTelnetHandler(private val cmdMap: mutable.HashMap[String, TelnetHan
     cmdMap.put("help", this)
 
     def commands = List("help")
+    def commandHelp = List("help - prints this message")
     def command(cmd: Array[String]) = {
         import com.appendr.streamd.util.RichCollection._
         cmd.head match {
             case "help" => {
                 "To execute a command, module:command <args> \n\n -- Modules -- \n" +
-                    format(cmdMap.values.distinctBy(_.module).map(t => t.module + ":\n" + format(t.commands, true)))
+                    format(cmdMap.values.distinctBy(_.module).map(t => t.module + ":\n" + format(t.commandHelp, true)))
             }
         }
     }
