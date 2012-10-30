@@ -3,17 +3,15 @@ TODO: Fix Kryo Codec bug in ScalaMapSerializer
 
 
 FEATURES:
-TODO: Actor Mailbox Mbeans
 TODO: Check config version against daemon version
 TODO: add codecs to Netty layer
 TODO: add environment variables to configuration ie. %STREAMD_HOME%
 TODO: add File and Resources to configuration by parsing protocol classpath:// file:// as well as relative paths etc...
 TODO: dynamic class loading and distribution / deployment of bytecode
-TODO: control port / jmx
 TODO: language bindings
 TODO: Logging config needs to be wired into the base config
 TODO: Investigate WebStart to spin up new nodes
-TODO: Store Implementations (Redis, Couch, Mongo)
+TODO: Store Implementations (Couch, Mongo)
 TODO: Sink Implementations  (0MQ, RabbitMQ, JMS, Scribe, Flume)
 TODO: Send Control Messages - Stream Complete Message
 TODO: Add Multicast to all nodes
