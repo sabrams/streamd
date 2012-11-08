@@ -16,7 +16,7 @@ package com.appendr.streamd.conf
 import java.net.InetSocketAddress
 import com.appendr.streamd.cluster.zk.ZKConfigSpec
 import com.appendr.streamd.cluster.Node
-import com.appendr.streamd.util.Reflector
+import com.appendr.streamd.util.{PortScanner, Reflector}
 import com.appendr.streamd.module.Module
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -49,7 +49,10 @@ sealed class ServerConfigSpec extends BaseConfigSpec[ServerConfig] {
 }
 
 sealed class ServerConfig(override val spec: ServerConfigSpec) extends BaseConfig[ServerConfig](spec) {
-    override val node = Some(Node(spec.name.value, address.getHostName, address.getPort))
+    override val node = {
+        val mport = PortScanner.scan(Range(10000, 32767))
+        Some(Node(spec.name.value, address.getHostName, address.getPort, mport.get))
+    }
 }
 
 abstract sealed class ModuleConfigSpec extends ConfigSpec[List[Module]] {

@@ -14,10 +14,11 @@
 package com.appendr.streamd.component
 
 import com.appendr.streamd.network.netty._
-import com.appendr.streamd.cluster.{Router, Cluster, Topology, Node}
+import com.appendr.streamd.cluster._
 import com.appendr.streamd.conf._
 import com.appendr.streamd.stream._
-import com.appendr.streamd.network.{TelnetNetworkHandler, DispatchingNetworkHandler}
+import com.appendr.streamd.network.services.{HttpServices, TelnetServices}
+import com.appendr.streamd.network.DispatchingNetworkHandler
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -41,32 +42,38 @@ sealed class Server(
     private val ms: ModuleSpec,
     private val cs: ClusterSpec) {
     private val cluster = Cluster(cs, config.node)
-    private val server = NettyServer()
     private val modules = ms.apply()
     private val dispatch = StreamRoutingDispatcher(modules, cluster)
-    private val controlPort = NettyTextServer()
+    private val server = NettyObjectServer(DispatchingNetworkHandler(dispatch))
+    private val telnet = TelnetServices()
+    private val telnetServer = NettyTextServer(telnet)
+    private val http = HttpServices()
+    private val httpServer = NettyHttpServer(http)
+
+    modules.foreach {
+        m => {
+            val service = m.service()
+            if (service.isDefined) {
+                telnet.registerService(service.get)
+                http.registerService(service.get)
+            }
+        }
+    }
 
     def start() {
         dispatch.start()
-        server.start(config.spec.port.value, DispatchingNetworkHandler(dispatch))
+        server.start(config.spec.port.value)
         cluster.start()
-
-        val telnet = new TelnetNetworkHandler
-        // add handlers
-        modules.foreach {
-            m => {
-                val cp = m.cport()
-                if (cp.isDefined) telnet.registerPlugin(cp.get)
-            }
-        }
-        controlPort.start(config.spec.cport.value, telnet)
+        telnetServer.start(config.spec.cport.value)
+        httpServer.start(NodeDecoder(config.node.get).managementPort)
     }
 
     def stop() {
         cluster.stop()
         dispatch.stop()
         modules.foreach(m => m.close())
-        controlPort.stop()
+        telnetServer.stop()
+        httpServer.stop()
         server.stop()
     }
 

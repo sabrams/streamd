@@ -16,7 +16,6 @@ package com.appendr.streamd.component
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 import collection.mutable
-import com.appendr.streamd.network.NetworkHandler
 import com.appendr.streamd.util.threading.CachedThreadPoolStrategy
 import scalaz._
 import Scalaz._
@@ -24,7 +23,7 @@ import Scalaz._
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 trait ServerComponent {
-    def start(port: Int, h: NetworkHandler, opts: Option[Map[String, Any]] = None)
+    def start(port: Int)
     def stop()
 }
 
@@ -42,18 +41,18 @@ class ClientComponentAdaptor[T](private val wrapped: ClientComponent[T])
         System.out.println("- Executing on thread: " + Thread.currentThread().getId)
     })(CachedThreadPoolStrategy.strategy)
     def name = wrapped.name
-    def connect(address: InetSocketAddress) = wrapped.connect(address)
-    def disconnect() = wrapped.disconnect()
-    def send(t: T) = actor(a) ! t
+    def connect(address: InetSocketAddress) { wrapped.connect(address) }
+    def disconnect() { wrapped.disconnect() }
+    def send(t: T) { actor(a) ! t }
 }
 
+// TODO: Check if client is connected
 class ClientComponentPool[T](private val clients: List[ClientComponent[T]])
     extends ClientComponent[T] {
     def name = clients(0).name
-    def connect(address: InetSocketAddress) = clients.foreach(c => c.connect(address))
-    def disconnect() = clients.foreach(c => c.disconnect())
-    // TODO: Check if client is connected
-    def send(t: T) = clients(math.abs(t.hashCode() % clients.length)).send(t)
+    def connect(address: InetSocketAddress) { clients.foreach(c => c.connect(address)) }
+    def disconnect() { clients.foreach(c => c.disconnect()) }
+    def send(t: T) { clients(math.abs(t.hashCode() % clients.length)).send(t) }
 }
 
 object ClientComponentRegistry {
@@ -78,19 +77,8 @@ class ClientComponentRegistry[T] {
         map.put(name, client)
     }
 
-    def removeClient(name: String): Option[ClientComponent[T]] = {
-        map.remove(name)
-    }
-
-    def getClient(name: String): Option[ClientComponent[T]] = {
-        map.get(name)
-    }
-
-    def getClientNames: List[String] = {
-        map.keySet.toList
-    }
-
-    def exists(name: String): Boolean = {
-        map.contains(name)
-    }
+    def removeClient(name: String): Option[ClientComponent[T]] = map.remove(name)
+    def getClient(name: String): Option[ClientComponent[T]] = map.get(name)
+    def getClientNames: List[String] = map.keySet.toList
+    def exists(name: String): Boolean = map.contains(name)
 }

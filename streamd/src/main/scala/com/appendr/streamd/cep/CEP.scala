@@ -29,9 +29,9 @@ import com.appendr.streamd.util.Reflector
 import com.espertech.esper.client.deploy.DeploymentInformation
 import com.espertech.esper.client.deploy.DeploymentState
 import com.espertech.esper.client.deploy.EPDeploymentAdmin
-import com.appendr.streamd.controlport.TelnetHandler
 import com.appendr.streamd.module.{Module, ModuleContext}
-import com.appendr.streamd.cep.CEP.{CEPControlPort, Engine}
+import com.appendr.streamd.cep.CEP.{CEPService, Engine}
+import com.appendr.streamd.network.services.Service
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -144,18 +144,18 @@ object CEP {
             esper.getEPAdministrator.getDeploymentAdmin.getDeploymentInformation.toList
         }
     }
-
-    class CEPControlPort(private val engine: CEP) extends TelnetHandler {
-        val module = "cep"
-        def commands = List("activate", "deactivate", "epl", "info", "list", "load", "unload")
-        def commandHelp = List(
+    class CEPService(private val engine: CEP) extends Service {
+        val name = "cep"
+        private val help = List(
             "activate   <id>     activate an epl module by deployment id",
             "deactivate <id>     deactivate an epl module by deployment id",
             "epl        <epl>    raw epl statement",
             "info                print engine instance id",
             "list                list all epl modules",
             "load       <url>    load a module file from a url",
-            "unload     <id>     unload and deactivate an epl module by deployment id")
+            "unload     <id>     unload and deactivate an epl module by deployment id",
+            "help                prints this message")
+        private val cmds = List("activate", "deactivate", "epl", "info", "list", "load", "unload", "help")
 
         def command(cmd: Array[String]) = {
             cmd.head match {
@@ -166,13 +166,14 @@ object CEP {
                 case "unload" => doCmd(cmd.tail, doUnload)
                 case "activate" => doCmd(cmd.tail, doActivate)
                 case "deactivate" => doCmd(cmd.tail, doDeactivate)
+                case "help" => commandHelp.reduceLeft[String]((acc, s) => acc + "\n" + s)
                 case _ => "Unknown command: " + cmd.head
             }
         }
 
-        def shutdown() {
-        }
-
+        def commands = cmds
+        def commandHelp = help
+        def shutdown() {}
         private def doLoad(cmd: Array[String]) = engine.engine.load(new URL(cmd.head))
         private def doUnload(cmd: Array[String]) = engine.engine.unload(cmd.head).getDeploymentId
         private def doActivate(cmd: Array[String]) = engine.engine.activate(cmd.head)
@@ -263,18 +264,11 @@ abstract class CEPModuleInfo {
 }
 
 class CEPModule(private val cep: Option[CEP]) extends Module {
-    private val port = Some(new CEPControlPort(cep.get))
-
-    def this() {
-        this(Some(CEP()))
-    }
-
-    def this(conf: Option[String], eplModules: Option[List[String]]) {
-        this(Some(CEP(conf, eplModules)))
-    }
-
+    private val svc = Some(new CEPService(cep.get))
+    def this() { this(Some(CEP())) }
+    def this(conf: Option[String], eplModules: Option[List[String]]) { this(Some(CEP(conf, eplModules))) }
     def proc() = cep
-    def cport() = port
+    def service() = svc
     def sink(): Option[Sink] = None
     def store(): Option[Store] = None
 }

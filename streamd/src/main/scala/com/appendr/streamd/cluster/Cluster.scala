@@ -20,7 +20,7 @@ import com.appendr.streamd.cluster.zk.{ZKConfigSpec, ZKClient}
 import com.appendr.streamd.network.netty.NettyClient
 import com.appendr.streamd.component.{ClientComponent, ClientComponentRegistry}
 import com.appendr.streamd.stream.{StreamTuple, StreamEvent}
-import com.appendr.streamd.util.{ListableCounterMBean, JMX, CounterMBean}
+import com.appendr.streamd.util.{ListableCounterMBean, JMX}
 import java.util.concurrent.atomic.AtomicLong
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -44,12 +44,8 @@ class Cluster(zks: ZKConfigSpec, val node: Option[Node])
         // start it up
         zk = zks.apply()
 
-        try {
-            zk.createBase
-        }
-        catch {
-            case e: Exception => log.warn(e.getMessage)
-        }
+        try { zk.createBase }
+        catch { case e: Exception => log.info(e.getMessage) }
 
         // self register this node
         if (node.isDefined) {

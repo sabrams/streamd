@@ -16,17 +16,10 @@ package com.appendr.streamd.cluster
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 object Node {
-    def apply() = {
-        new EmptyNode
-    }
-
-    def apply(name: String, host: String, port: Int, routable: Boolean = true) = {
-        new Node(name, host + ":" + port + ":" + routable.toString)
-    }
-
-    def apply(name: String, data: String) = {
-        new Node(name, data)
-    }
+    def apply() = new EmptyNode
+    def apply(name: String, host: String, port: Int, mport: Int, routable: Boolean = true) =
+        new Node(name, host + ":" + port + ":" + mport + ":" + routable.toString)
+    def apply(name: String, data: String) = new Node(name, data)
 }
 
 @SerialVersionUID(1)
@@ -60,14 +53,15 @@ class NodeDecoder(val node: Node) extends Serializable {
     val hpe = parse(node)
 
     def host = hpe._1
-    def port = hpe._2.toInt
-    def isRoutable = hpe._3
+    def port = hpe._2
+    def managementPort = hpe._3
+    def isRoutable = hpe._4
 
-    def parse(node: Node): (String, String, Boolean) = {
+    private def parse(node: Node): (String, Int, Int, Boolean) = {
         val n = node.data.split(':')
-        (n(0), n(1), n(2).toBoolean)
+        (n(0), n(1).toInt, n(2).toInt, n(3).toBoolean)
     }
 
     override def toString =
-        "NodeDecoder{" + "name=" + name + " host=" + hpe._1 + " port=" + hpe._2 + "routable=" + hpe._3 + '}'
+        "NodeDecoder{" + "name=" + name + " host=" + hpe._1 + " port=" + hpe._2 + " managementPort=" + hpe._3 + "routable=" + hpe._4 + '}'
 }

@@ -11,20 +11,23 @@
  *  (_||_)|_)(/_| |(_||
  *     |  |
  */
-package com.appendr.streamd.network.netty
+package com.appendr.streamd.network.services
 
-import com.appendr.streamd.network.NetworkHandler
-import org.jboss.netty.channel._
-import org.jboss.netty.handler.codec.string.{StringEncoder, StringDecoder}
+import collection.mutable
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-class StringPipelineFactory(private val h: NetworkHandler)
-    extends ChannelPipelineFactory {
-    def getPipeline: ChannelPipeline = {
-        Channels.pipeline(
-            new StringDecoder,
-            new StringEncoder,
-            new NettyHandler(h))
+trait Services[T <: Service] {
+    protected val map = new mutable.HashMap[String, T]
+    def registerService(t: T) {
+        t.commands.map(k => if (!map.contains(k)) map.put(t.name + ":" + k, t))
     }
+}
+
+trait Service {
+    def name: String
+    def commands: List[String]
+    def command(cmd: Array[String]): String
+    def commandHelp: List[String]
+    def shutdown()
 }
