@@ -74,11 +74,27 @@ class FileConnector(config: Configuration, xfrm: InputTransformer[Array[Byte]])
 }
 
 /**
+ * Tails a file, applies a transform and posts to the cluster
+ * @param config configueration object
+ * @param xfrm  transformer
+ */
+// TODO - implement
+class TailConnector(config: Configuration, xfrm: InputTransformer[Array[Byte]])
+    extends Connector[Array[Byte]](config, xfrm) {
+    protected override def connectorStart(args: Array[String]) {
+
+    }
+
+    protected override def connectorStop() {
+    }
+}
+
+/**
  * Client that creates a local server to recieve callbacks
  * @param config configueration object
  * @param xfrm  transformer
  */
-// TODO: Implement
+// TODO: implement
 class ClientConnector(config: Configuration, xfrm: InputTransformer[Array[Byte]])
     extends Connector[Array[Byte]](config, xfrm) {
     protected override def connectorStart(args: Array[String]) {
