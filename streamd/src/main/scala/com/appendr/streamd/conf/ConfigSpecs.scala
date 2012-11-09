@@ -70,7 +70,6 @@ sealed class ModuleSpec(config: Configuration) extends ModuleConfigSpec {
             }
         )
 
-        modules.foreach(m => m.open())
         modules
     }
 }

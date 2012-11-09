@@ -15,20 +15,27 @@ package com.appendr.streamd.network.services
 
 import com.appendr.streamd.network.netty.NettyHttpNetworkHandler
 import java.net.SocketAddress
+import com.appendr.streamd.cluster.Topology
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 object HttpServices {
-    def apply() = new HttpServices
+    def apply(topology: Topology) = new HttpServices(topology)
 }
 
-class HttpServices extends NettyHttpNetworkHandler with Services[Service] {
+class HttpServices(protected val topology: Topology)
+    extends NettyHttpNetworkHandler with Services[Service] {
     override def registerService(t: Service) {
         t.commands.map(k => if (!map.contains(k)) map.put(t.name + "/" + k, t))
     }
 
-    def handleRequest(cmd: String) = map.contains(cmd)
-    def handleRequest(cmd: String, path: Array[String]) = map.get(cmd).get.command(path)
     def handleConnect(address: SocketAddress) {}
     def handleDisconnect(address: SocketAddress) {}
+    def handleRequest(cmd: String) = map.contains(cmd)
+    def handleRequest(cmd: String, path: Array[String]) = {
+        map.get(cmd).get.command(path)
+
+        // test to see if we need to broadcast the command
+
+    }
 }

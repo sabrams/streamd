@@ -71,16 +71,16 @@ object Main {
 }
 
 sealed class Main {
-    private var app: App = null
+    private var app: Option[App] = None
 
     System.out.println(Main.banner)
 
     def init(args: Array[String]) {
-        app = new App(args)
+        app = App(args)
     }
 
     def start() {
-        app.start()
+        app.get.start()
     }
 
     def stop() {
@@ -88,12 +88,18 @@ sealed class Main {
     }
 
     def destroy() {
-        app.stop()
+        app.get.stop()
+    }
+}
+
+object App {
+    def apply(args: Array[String]) = {
+        Some(new App(args))
     }
 }
 
 class App(private val args: Array[String]) {
-    private var server: Server = null
+    private var server: Option[Server] = None
 
     def start() {
         val loc = args.size match {
@@ -121,15 +127,15 @@ class App(private val args: Array[String]) {
         config.map.foreach(kv => System.out.println(kv._1 + " = " + kv._2))
 
         // create the node
-        server = Server(config)
+        server = Some(Server(config))
 
         // start your engines
-        server.start()
+        server.get.start()
 
     }
 
     def stop() {
-        if (server != null) server.stop()
+        if (server.isDefined) server.get.stop()
     }
 }
 

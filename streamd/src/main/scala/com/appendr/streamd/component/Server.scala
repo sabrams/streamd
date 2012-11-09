@@ -45,9 +45,9 @@ sealed class Server(
     private val modules = ms.apply()
     private val dispatch = StreamRoutingDispatcher(modules, cluster)
     private val server = NettyObjectServer(DispatchingNetworkHandler(dispatch))
-    private val telnet = TelnetServices()
+    private val telnet = TelnetServices(cluster)
     private val telnetServer = NettyTextServer(telnet)
-    private val http = HttpServices()
+    private val http = HttpServices(cluster)
     private val httpServer = NettyHttpServer(http)
 
     modules.foreach {
@@ -61,6 +61,7 @@ sealed class Server(
     }
 
     def start() {
+        modules.foreach(m => m.open())
         dispatch.start()
         server.start(config.spec.port.value)
         cluster.start()
@@ -70,11 +71,11 @@ sealed class Server(
 
     def stop() {
         cluster.stop()
+        server.stop()
         dispatch.stop()
         modules.foreach(m => m.close())
         telnetServer.stop()
         httpServer.stop()
-        server.stop()
     }
 
     def getNode: Node = config.node.get

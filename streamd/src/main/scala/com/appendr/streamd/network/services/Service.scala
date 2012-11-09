@@ -14,10 +14,12 @@
 package com.appendr.streamd.network.services
 
 import collection.mutable
+import com.appendr.streamd.cluster.Topology
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 trait Services[T <: Service] {
+    protected val topology: Topology
     protected val map = new mutable.HashMap[String, T]
     def registerService(t: T) {
         t.commands.map(k => if (!map.contains(k)) map.put(t.name + ":" + k, t))

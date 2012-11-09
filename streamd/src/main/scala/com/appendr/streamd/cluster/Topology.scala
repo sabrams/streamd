@@ -18,7 +18,7 @@ import scala.collection.mutable.HashMap
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-class Topology extends Observable {
+abstract class Topology extends Observable {
     private val ring = ConsistentHash[String](137)
     private val nodeMap = HashMap[String, Node]()
 
@@ -27,6 +27,7 @@ class Topology extends Observable {
         nodeMap(nodeName)
     }
 
+    def isThisNode(n: Node): Boolean
     def getNodes = nodeMap.values.toList
     override def toString: String = nodeMap.toString()
 

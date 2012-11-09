@@ -15,6 +15,7 @@ package com.appendr.streamd.network.services
 
 import com.appendr.streamd.network.{ControlMessage, NetworkMessage, LoggingNetworkHandler}
 import collection.mutable
+import com.appendr.streamd.cluster.Topology
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -52,10 +53,11 @@ class DefaultTelnetService(private val cmdMap: mutable.HashMap[String, Service])
 }
 
 object TelnetServices {
-    def apply() = new TelnetServices
+    def apply(topology: Topology) = new TelnetServices(topology)
 }
 
-class TelnetServices extends LoggingNetworkHandler with Services[Service] {
+class TelnetServices(protected val topology: Topology)
+    extends LoggingNetworkHandler with Services[Service] {
     registerService(new DefaultTelnetService(map))
 
     def handleMessage(msg: Object): Option[NetworkMessage] = {

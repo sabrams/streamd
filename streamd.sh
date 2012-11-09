@@ -9,8 +9,9 @@ function usage()
     echo "--------------------------"
     echo "streamd.sh"
     echo "    -help | -h        prints this message."
-    echo "    -debug <port>     run in debug mode, specify port."
-    echo "    -conf <conf file> run with the specified configuration file."
+    echo "    -debug   <port>   run in debug mode, specify port."
+    echo "    -jmx     <port>   open JMX port, specify port."
+    echo "    -conf    <file>   run with the specified configuration file."
     echo "    -plugins <path>   the path to the plugin directory."
     echo "    -daemon           run as a daemon."
     echo "    -client           run the client driver."
@@ -29,6 +30,7 @@ function classpath()
 CONF=
 DAEMON=
 CLIENT=
+JMX=
 
 while [ "$1" != "" ]; do
     PARAM=`echo $1 | awk -F= '{print $1}'`
@@ -40,6 +42,9 @@ while [ "$1" != "" ]; do
             ;;
         -debug)
             JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,address=${VALUE},server=y ${JAVA_OPTS}"
+            ;;
+        -jmx)
+            JMX="-Dcom.sun.management.jmxremote.port=${VALUE} -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
             ;;
         -conf)
             CONF=${VALUE}
@@ -100,5 +105,5 @@ fi
 
 JAVA_OPTS="-server -Xmx3g -Xms3g ${JAVA_OPTS}"
 echo "---> running: java $JAVA_OPTS -Done-jar.class.path=$CLASSP -jar $STREAMD_HOME/streamd.one-jar.jar $APP_ARGS"
-java $JAVA_OPTS -Done-jar.class.path=$CLASSP -jar $STREAMD_HOME/streamd.one-jar.jar $APP_ARGS
+java $JAVA_OPTS $JMX -Done-jar.class.path=$CLASSP -jar $STREAMD_HOME/streamd.one-jar.jar $APP_ARGS
 
