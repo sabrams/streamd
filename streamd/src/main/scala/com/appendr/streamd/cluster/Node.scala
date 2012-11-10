@@ -18,7 +18,7 @@ package com.appendr.streamd.cluster
 object Node {
     def apply() = new EmptyNode
     def apply(name: String, host: String, port: Int, mport: Int, routable: Boolean = true) =
-        new Node(name, host + ":" + port + ":" + mport + ":" + routable.toString)
+        new Node(name, host + "/" + port + "/" + mport + "/" + routable.toString)
     def apply(name: String, data: String) = new Node(name, data)
 }
 
@@ -58,7 +58,7 @@ class NodeDecoder(val node: Node) extends Serializable {
     def isRoutable = hpe._4
 
     private def parse(node: Node): (String, Int, Int, Boolean) = {
-        val n = node.data.split(':')
+        val n = node.data.split('/')
         (n(0), n(1).toInt, n(2).toInt, n(3).toBoolean)
     }
 

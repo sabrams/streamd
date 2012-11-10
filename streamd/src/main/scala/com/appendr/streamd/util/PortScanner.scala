@@ -13,7 +13,7 @@
  */
 package com.appendr.streamd.util
 
-import java.net.ServerSocket
+import java.net.{InetAddress, NetworkInterface, ServerSocket}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -29,5 +29,15 @@ object PortScanner {
         }
 
         range.collectFirst { case (port) if (open(port)) => port }
+    }
+}
+
+object ExternalIp {
+    def getFirstInetAddress(): InetAddress = {
+        import collection.JavaConverters._
+        val nics = NetworkInterface.getNetworkInterfaces.asScala
+        val ifs = nics.filter(nic => (!nic.isLoopback && !nic.isPointToPoint && !nic.isVirtual && nic.isUp))
+        val ips = ifs.map(i => i.getInetAddresses.asScala.filter(inet => inet.isReachable(5))).flatten.toList
+        ips.head
     }
 }

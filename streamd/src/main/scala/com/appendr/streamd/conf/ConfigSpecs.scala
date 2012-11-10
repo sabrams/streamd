@@ -13,10 +13,10 @@
  */
 package com.appendr.streamd.conf
 
-import java.net.InetSocketAddress
+import java.net.{NetworkInterface, InetSocketAddress}
 import com.appendr.streamd.cluster.zk.ZKConfigSpec
 import com.appendr.streamd.cluster.Node
-import com.appendr.streamd.util.{PortScanner, Reflector}
+import com.appendr.streamd.util.{ExternalIp, PortScanner, Reflector}
 import com.appendr.streamd.module.Module
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -34,7 +34,7 @@ abstract sealed class BaseConfigSpec[T] extends ConfigSpec[T] {
 }
 
 abstract sealed class BaseConfig[T](val spec: BaseConfigSpec[T]) {
-    val address = new InetSocketAddress(spec.port.value)
+    val address = new InetSocketAddress(ExternalIp.getFirstInetAddress(), spec.port.value)
     val node: Option[Node]
 }
 
