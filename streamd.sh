@@ -12,7 +12,8 @@ function usage()
     echo "    -debug   <port>   run in debug mode, specify port."
     echo "    -jmx     <port>   open JMX port, specify port."
     echo "    -conf    <file>   run with the specified configuration file."
-    echo "    -plugins <path>   the path to the plugin directory."
+    echo "    -lib     <path>   the path to the lib directory."
+    echo "    -node    <name>   the identifier for this node."
     echo "    -daemon           run as a daemon."
     echo "    -client           run the client driver."
 }
@@ -31,7 +32,7 @@ CONF=
 DAEMON=
 CLIENT=
 JMX=
-
+NODE=
 while [ "$1" != "" ]; do
     PARAM=`echo $1 | awk -F= '{print $1}'`
     VALUE=`echo $1 | awk -F= '{print $2}'`
@@ -49,11 +50,14 @@ while [ "$1" != "" ]; do
         -conf)
             CONF=${VALUE}
             ;;
-        -plugins)
+        -lib)
             classpath ${VALUE}
             ;;
         -client)
             CLIENT="1"
+            ;;
+        -node)
+            NODE=${VALUE}
             ;;
         -daemon)
             DAEMON="1"
@@ -92,10 +96,19 @@ if [ -n "$CLIENT" ] && [ -n "$DAEMON" ]; then
     exit 1
 fi
 
+if [ -z ${NODE} ] && [ -z "$CLIENT" ]; then
+    usage
+    echo "ERROR: No -node=<name> specified"
+    exit 1
+fi
+
 if [ -n "$CLIENT" ]; then
     JAVA_OPTS="-Done-jar.main.class=com.appendr.streamd.Driver ${JAVA_OPTS}"
 fi
 
+if [ -n $NODE ] && [ -z "$CLIENT" ]; then
+    JAVA_OPTS="-Dstreamd.nodeId=${NODE} -Dlogback.configurationFile=${STREAMD_HOME}/conf/logback.xml ${JAVA_OPTS}"
+fi
 
 APP_ARGS=${CONF}
 
