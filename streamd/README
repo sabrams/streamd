@@ -1,0 +1,25 @@
+--------------------------
+     _|_ _ _ _  _  _|
+    _)|_| (-(_||||(_|
+        stream daemon ~~~
+-------------------------
+
+"Big Memory" Stream Processor
+
+NOTE: THIS APPLICATION REQUIRES APACHE ZOOKEEPER
+
+Quick Start for a 2 node cluster:
+1) build streamd mvn -Dmaven.test.skip install
+2) build example/cep
+3) explode streamd-0.x.x.zip
+4) source setenv.sh
+5) copy cep-example.jar to $STREAMD_HOME/lib
+6) edit app.conf, set the zookeeper host and port
+7) add modules=["com.appendr.streamd.example.CEPExample"] under the version key
+8) copy conf/node.conf to node2.conf
+9) edit node2.conf and change the name to node-2, change the port and control/port to open ports
+
+Now that everything is configured...
+open a new terminal start a zookeeper http://zookeeper.apache.org/doc/r3.2.2/zookeeperStarted.html
+open a new terminal, source setenv.sh and run ./streamd.sh -conf=node.conf
+open a new terminal, source setenv.sh and run ./streamd.sh -conf=node2.conf

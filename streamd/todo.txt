@@ -1,14 +1,16 @@
 BUGS
 TODO: Fix Kryo Codec bug in ScalaMapSerializer
-
+TODO: Fix performance issues
 
 FEATURES:
+TODO: Convert build to SBT
 TODO: Check config version against daemon version
 TODO: add codecs to Netty layer
 TODO: add environment variables to configuration ie. %STREAMD_HOME%
 TODO: add File and Resources to configuration by parsing protocol classpath:// file:// as well as relative paths etc...
 TODO: dynamic class loading and distribution / deployment of bytecode
-TODO: language bindings
+TODO: language bindings (jython, jruby modules and stream processors)
+TODO: module dsl
 TODO: Logging config needs to be wired into the base config
 TODO: Investigate WebStart to spin up new nodes
 TODO: Store Implementations (Couch, Mongo)

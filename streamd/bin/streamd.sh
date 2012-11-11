@@ -12,8 +12,6 @@ function usage()
     echo "    -debug   <port>   run in debug mode, specify port."
     echo "    -jmx     <port>   open JMX port, specify port."
     echo "    -conf    <file>   run with the specified configuration file."
-    echo "    -lib     <path>   the path to the lib directory."
-    echo "    -node    <name>   the identifier for this node."
     echo "    -daemon           run as a daemon."
     echo "    -client           run the client driver."
 }
@@ -48,16 +46,10 @@ while [ "$1" != "" ]; do
             JMX="-Dcom.sun.management.jmxremote.port=${VALUE} -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
             ;;
         -conf)
-            CONF=${VALUE}
-            ;;
-        -lib)
-            classpath ${VALUE}
+            CONF=${STREAMD_HOME}/conf/${VALUE}
             ;;
         -client)
             CLIENT="1"
-            ;;
-        -node)
-            NODE=${VALUE}
             ;;
         -daemon)
             DAEMON="1"
@@ -72,51 +64,58 @@ while [ "$1" != "" ]; do
 done
 
 # DO CHECKS
-if [ -z "$STREAMD_HOME" ]; then
+if [ -z "${STREAMD_HOME}" ]; then
     usage 
     echo "ERROR: STREAMD_HOME is not set"
     exit 1
 fi
 
-if [ -z "$CONF" ]; then 
+if [ -z "${CONF}" ]; then
     usage
     echo "ERROR: No configuration specified"
     exit 1
-elif [ -e "$CONF" ]; then
-    echo "Configuration file is: $CONF"
+elif [ -e "${CONF}" ]; then
+    echo "Configuration file is: ${CONF}"
 else  
     usage
     echo "ERROR: No configuration specified"
     exit 1
 fi
 
-if [ -n "$CLIENT" ] && [ -n "$DAEMON" ]; then
+if [ -z "${CLIENT}" ]; then
+    filename=$(basename "${CONF}")
+    NODE="${filename%.*}"
+fi
+
+if [ -n "${CLIENT}" ] && [ -n "${DAEMON}" ]; then
     usage
     echo "ERROR: Can not run client as a daemon"
     exit 1
 fi
 
-if [ -z ${NODE} ] && [ -z "$CLIENT" ]; then
+if [ -z "${NODE}" ] && [ -z "${CLIENT}" ]; then
     usage
     echo "ERROR: No -node=<name> specified"
     exit 1
+else
+    echo "Node Name is: ${NODE}"
+    JAVA_OPTS="-Dstreamd.nodeId=${NODE} \
+    -Dlogback.configurationFile=${STREAMD_HOME}/conf/logback.xml \
+    -Dlog4j.configuration=file://${STREAMD_HOME}/conf/log4j.xml \
+    -Dstreamd.cep.configuration=file://${STREAMD_HOME}/conf/esper.default.xml ${JAVA_OPTS}"
 fi
 
-if [ -n "$CLIENT" ]; then
+if [ -n "${CLIENT}" ]; then
     JAVA_OPTS="-Done-jar.main.class=com.appendr.streamd.Driver ${JAVA_OPTS}"
-fi
-
-if [ -n $NODE ] && [ -z "$CLIENT" ]; then
-    JAVA_OPTS="-Dstreamd.nodeId=${NODE} -Dlogback.configurationFile=${STREAMD_HOME}/conf/logback.xml ${JAVA_OPTS}"
 fi
 
 APP_ARGS=${CONF}
 
-if [ -z ${DAEMON} ] && [ -z "$CLIENT" ]; then
+if [ -z ${DAEMON} ] && [ -z "${CLIENT}" ]; then
     APP_ARGS="$APP_ARGS Xdaemon"
 fi
 
-JAVA_OPTS="-server -Xmx3g -Xms3g ${JAVA_OPTS}"
+classpath ${STREAMD_HOME}/lib
+JAVA_OPTS="-server -Xmx1g -Xms1g $JAVA_OPTS"
 echo "---> running: java $JAVA_OPTS -Done-jar.class.path=$CLASSP -jar $STREAMD_HOME/streamd.one-jar.jar $APP_ARGS"
 java $JAVA_OPTS $JMX -Done-jar.class.path=$CLASSP -jar $STREAMD_HOME/streamd.one-jar.jar $APP_ARGS
-

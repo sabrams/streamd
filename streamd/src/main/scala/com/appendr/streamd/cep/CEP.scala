@@ -55,7 +55,9 @@ object CEP {
             EPServiceProviderManager.getProvider(UUID.randomUUID().toString, cfg)
 
         private[CEP] def init(config: Option[String]) {
+            val defCfg = System.getProperty("streamd.cep.configuration")
             if (config.isDefined) cfg.configure(new URL(config.get))
+            else if (defCfg != null && !defCfg.isEmpty) cfg.configure(new URL(defCfg))
             else cfg.configure()
             esper.initialize()
         }
