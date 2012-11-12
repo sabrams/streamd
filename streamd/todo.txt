@@ -1,6 +1,7 @@
 BUGS
 TODO: Fix Kryo Codec bug in ScalaMapSerializer
 TODO: Fix performance issues
+TODO: Fix startup race condition on port scan when running multiple nodes on same host
 
 FEATURES:
 TODO: Convert build to SBT
@@ -17,3 +18,4 @@ TODO: Store Implementations (Couch, Mongo)
 TODO: Sink Implementations  (0MQ, RabbitMQ, JMS, Scribe, Flume)
 TODO: Send Control Messages - Stream Complete Message
 TODO: Add Multicast to all nodes
+TODO: Remove dependency on zookeeper and use gossip based clustering with leader election
