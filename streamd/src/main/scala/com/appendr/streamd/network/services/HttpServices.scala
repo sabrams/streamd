@@ -20,10 +20,10 @@ import com.appendr.streamd.cluster.Topology
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 object HttpServices {
-    def apply(topology: Topology) = new HttpServices(topology)
+    def apply(topology: Topology) = new HttpServices(Some(topology))
 }
 
-class HttpServices(protected val topology: Topology)
+class HttpServices(protected val topology: Option[Topology])
     extends NettyHttpNetworkHandler with Services[Service] {
     override def registerService(t: Service) {
         t.commands.map(k => if (!map.contains(k)) map.put(t.name + "/" + k, t))

@@ -53,10 +53,10 @@ class DefaultTelnetService(private val cmdMap: mutable.HashMap[String, Service])
 }
 
 object TelnetServices {
-    def apply(topology: Topology) = new TelnetServices(topology)
+    def apply(topology: Topology) = new TelnetServices(Some(topology))
 }
 
-class TelnetServices(protected val topology: Topology)
+class TelnetServices(protected val topology: Option[Topology])
     extends LoggingNetworkHandler with Services[Service] {
     registerService(new DefaultTelnetService(map))
 

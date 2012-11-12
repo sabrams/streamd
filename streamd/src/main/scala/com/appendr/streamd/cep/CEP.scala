@@ -269,7 +269,8 @@ class CEPModule(private val cep: Option[CEP]) extends Module {
     private val svc = Some(new CEPService(cep.get))
     def this() { this(Some(CEP())) }
     def this(conf: Option[String], eplModules: Option[List[String]]) { this(Some(CEP(conf, eplModules))) }
-    def proc() = cep
+    def this(epl: String) { this(Some(CEP(None, Some(List(epl))))) }
+    def proc() = cep.asInstanceOf[Option[StreamProc]]
     def service() = svc
     def sink(): Option[Sink] = None
     def store(): Option[Store] = None

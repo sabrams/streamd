@@ -1,0 +1,7 @@
+module test.module;
+import com.appendr.streamd.cep.Subscriber;
+create map schema colors as (id String, color String, score float);
+
+@Name('test.module')
+@Subscriber('com.appendr.streamd.example.CustomSubscriber')
+select distinct color, count(color) as count, avg(score) as averageScore from colors.win:time_accum(500);

@@ -17,7 +17,7 @@ import com.appendr.streamd.network.netty.NettyHttpServer
 @RunWith(classOf[JUnitRunner])
 class HttpTest extends FunSuite with BeforeAndAfter {
     private val log = LoggerFactory.getLogger(getClass)
-    val service = new HttpServices
+    val service = new HttpServices(None)
     var server = NettyHttpServer(service)
 
     before {
