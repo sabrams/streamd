@@ -14,7 +14,7 @@
 package com.appendr.streamd.sink
 
 import com.appendr.streamd.util.LifeCycle
-import java.io.{File, FileOutputStream}
+import java.io.{BufferedWriter, FileWriter, File, FileOutputStream}
 import java.net.URI
 import org.slf4j.LoggerFactory
 import com.appendr.streamd.network.netty.NettyWebSocketClient
@@ -27,13 +27,13 @@ trait Sink extends LifeCycle {
 
 class FileSink(path: String, name: String) extends Sink {
     private val log = LoggerFactory.getLogger(getClass)
-    private var stream: Option[FileOutputStream] = None
+    private var stream: Option[BufferedWriter] = None
 
     def open() {
-        val f = new File(path + File.pathSeparator + name)
+        val f = new File(path, name)
         if (!f.exists()) f.createNewFile()
         f.setWritable(true)
-        stream = Some(new FileOutputStream(f))
+        stream = Some(new BufferedWriter(new FileWriter(f)))
     }
 
     def close() {
@@ -44,8 +44,11 @@ class FileSink(path: String, name: String) extends Sink {
     }
 
     def out(msg: Any) {
-        if (stream.isDefined) stream.get.write(msg.toString.getBytes)
-        else log.warn("Stream is not open for writing.")
+        if (stream.isDefined) {
+            stream.get.write(msg.toString)
+            stream.get.newLine()
+        }
+        else log.warn("Sink is not open for writing.")
     }
 }
 

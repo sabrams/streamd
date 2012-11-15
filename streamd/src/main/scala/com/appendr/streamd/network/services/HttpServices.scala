@@ -35,7 +35,6 @@ class HttpServices(protected val topology: Option[Topology])
     def handleRequest(cmd: String, path: Array[String]) = {
         map.get(cmd).get.command(path)
 
-        // test to see if we need to broadcast the command
-
+        // TODO: test to see if we need to broadcast the command
     }
 }

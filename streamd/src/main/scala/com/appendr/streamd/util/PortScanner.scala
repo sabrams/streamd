@@ -38,6 +38,8 @@ object ExternalIp {
         val nics = NetworkInterface.getNetworkInterfaces.asScala
         val ifs = nics.filter(nic => (!nic.isLoopback && !nic.isPointToPoint && !nic.isVirtual && nic.isUp))
         val ips = ifs.map(i => i.getInetAddresses.asScala.filter(inet => inet.isReachable(5))).flatten.toList
-        ips.head
+
+        if (ips.isEmpty) InetAddress.getLocalHost
+        else ips.head
     }
 }

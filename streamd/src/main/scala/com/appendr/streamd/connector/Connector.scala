@@ -18,6 +18,7 @@ import com.appendr.streamd.cluster.{Cluster, Node}
 import com.appendr.streamd.conf.{ClusterSpec, Configuration}
 import com.appendr.streamd.stream.StreamEvent
 import com.appendr.streamd.stream.Source
+import org.slf4j.LoggerFactory
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -64,9 +65,11 @@ abstract class Connector[I](config: Configuration, xfrm: InputTransformer[I]) {
  */
 class FileConnector(config: Configuration, xfrm: InputTransformer[Array[Byte]])
     extends Connector[Array[Byte]](config, xfrm) {
+    private val log = LoggerFactory.getLogger(getClass)
     protected override def connectorStart(args: Array[String]) {
         val iter = io.Source.fromFile(new URI(args.head)).getLines()
         for (s <- iter) post(s.getBytes)
+        log.warn("Reached <EOF> for: " + args.head)
     }
 
     protected override def connectorStop() {
